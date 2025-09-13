@@ -50,8 +50,12 @@ export default class Table {
     }
 
     destroy() {
-        if ($.fn.DataTable.isDataTable('#table_basic')) {
-            $('#table_dt').DataTable().destroy();
+         try {
+            if ($.fn.DataTable.isDataTable('#table_dt')) {
+                $('#table_dt').DataTable().destroy();
+            }
+        } catch (e) {
+            // noop: table not initialized yet
         }
     }
 

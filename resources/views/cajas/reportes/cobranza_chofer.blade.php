@@ -39,7 +39,7 @@
                                 <div class="form-group">
                                     <label>Chofer</label>
                                     <div class="input-group mb-4">
-                                        <select class="form-control" v-model="chofer_id">
+                                        <select class="form-control select_chofer" v-model="chofer_id">
                                             <option disabled value="">Seleccione un chofer</option>
                                            <template v-for="m in chofers">
                                                 <option :value="m.id">
@@ -113,7 +113,29 @@
                         chofer_id: '',
                     }
                 },
+                watch: {
+                    chofers() {
+                        this.$nextTick(() => this.initSelectChofer());
+                    }
+                },
                 methods: {
+                    initSelectChofer() {
+                        const vm = this;
+                        const $sel = $(".select_chofer");
+                        try { $sel.select2('destroy'); } catch (e) {}
+                        $sel.select2({
+                            placeholder: "Seleccione un chofer",
+                            allowClear: true,
+                            width: '100%'
+                        });
+                        // Sync select2 -> Vue
+                        $sel.off('change.select2.vue').on('change.select2.vue', function () {
+                            const val = $(this).val();
+                            vm.chofer_id = val === null ? '' : val;
+                        });
+                        // Apply current value Vue -> select2
+                        $sel.val(vm.chofer_id ?? '').trigger('change.select2');
+                    },
                     async Save() {
                         try {
                             // let res = await axios.post(, this.model)
@@ -163,7 +185,7 @@
                             const res = await axios.post("{{ url('api/cobranzaGastos/filtrar-por-chofer') }}", {
                                 fecha_inicio: this.fecha_inicio,
                                 fecha_fin: this.fecha_fin,
-                                chofer_id: this.chofer_id
+                                chofer_id: Number(this.chofer_id)
                             });
 
                             this.ventas = res.data.ventas || res
@@ -258,6 +280,8 @@
                             });
                             const choferes = await this.GET_DATA("{{ url('api/choferes') }}");
                             this.chofers = choferes;
+                            await this.$nextTick(() => this.initSelectChofer());
+
                         } catch (e) {
                             console.error("Error al iniciar:", e);
                         } finally {

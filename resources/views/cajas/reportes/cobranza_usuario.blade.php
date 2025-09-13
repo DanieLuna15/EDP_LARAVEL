@@ -39,7 +39,7 @@
                                 <div class="form-group">
                                     <label>Usuario</label>
                                     <div class="input-group mb-4">
-                                        <select class="form-control" v-model="user">
+                                        <select class="form-control select_usuario" v-model="user">
                                             <option disabled value="">Seleccione un usuario</option>
                                             <template v-for="m in users">
                                                 <option :value="m.id">{{ m . nombre }}</option>
@@ -110,7 +110,31 @@
                         user: '',
                     }
                 },
+                watch: {
+                    users() {
+                        this.$nextTick(() => this.initSelectUsuario());
+                    }
+                },
                 methods: {
+                    initSelectUsuario() {
+                        const vm = this;
+                        const $sel = $(".select_usuario");
+                        try {
+                            $sel.select2('destroy');
+                        } catch (e) {}
+                        $sel.select2({
+                            placeholder: "Seleccione un usuario",
+                            allowClear: true,
+                            width: '100%'
+                        });
+                        // Sync select2 -> Vue
+                        $sel.off('change.select2.vue').on('change.select2.vue', function() {
+                            const val = $(this).val();
+                            vm.user = val === null ? '' : val;
+                        });
+                        // Apply current value Vue -> select2
+                        $sel.val(vm.user ?? '').trigger('change.select2');
+                    },
                     async Save() {
                         try {
                             // let res = await axios.post(, this.model)
@@ -160,7 +184,7 @@
                             const res = await axios.post("{{ url('api/cobranzaGastos/filtrar-por-usuario') }}", {
                                 fecha_inicio: this.fecha_inicio,
                                 fecha_fin: this.fecha_fin,
-                                user_id: this.user
+                                user_id: Number(this.user)
                             });
 
                             this.ventas = res.data.ventas || res
@@ -182,7 +206,8 @@
                                 window.open(res.data.url_pdf, '_blank');
                             } else {
                                 swal.fire('Información',
-                                    'No se encontraron resultados para el rango de fechas o el usuario seleccionado.', 'info'
+                                    'No se encontraron resultados para el rango de fechas o el usuario seleccionado.',
+                                    'info'
                                 );
                             }
                         } catch (e) {
@@ -257,6 +282,8 @@
                             // Traer usuarios
                             const usuarios = await this.GET_DATA("{{ url('api/users') }}");
                             this.users = usuarios;
+                            await this.$nextTick(() => this.initSelectUsuario());
+
                         } catch (e) {
                             console.error("Error al iniciar:", e);
                         } finally {

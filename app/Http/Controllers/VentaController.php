@@ -845,6 +845,7 @@ class VentaController extends Controller
         $venta->estado = 0;
         
         $venta->save();
+        ArqueoVenta::where('venta_id', $venta->id)->update(['estado' => 0]);
 
         $venta->load('ventaDetallePps.subdetalleDescuentoAcuerdo');
         foreach ($venta->VentaDetallePps as $d) {

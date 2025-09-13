@@ -75,7 +75,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="(m,i) in data">
+                                        <tr v-for="(m,i) in data" :key="m.id">
                                             <td>{{ i + 1 }}</td>
                                             <td>{{ m . name }}</td>
                                             <td>{{ m . sucursal . nombre }}</td>
@@ -143,22 +143,20 @@
                 methods: {
                     async Save() {
                         try {
-                            // let res = await axios.post(, this.model)
-                            const params = new URLSearchParams(this.model);
                             let url = "{{ url('api/cajaSucursals') }}";
                             if (this.add == false) {
                                 url = "{{ url('api/cajaSucursals') }}/" + this.model.id
-                                let res = await axios.put(url, this.model)
-                                dt.destroy()
-                                await this.load()
-                                dt.create()
+                                await axios.put(url, this.model)
                             } else {
-                                let res = await axios.post(url, this.model)
-                                dt.destroy()
-                                await this.load()
-                                dt.create()
-
+                                await axios.post(url, this.model)
                             }
+                            // recargar y re-inicializar DataTable justo después del render
+                            dt.destroy()
+                            await this.load()
+                            await this.$nextTick(() => { dt.create() })
+                            // limpiar formulario para el siguiente uso
+                            this.model = { name: '', sucursal_id: this.model.sucursal_id || 1 }
+                            this.add = true
                         } catch (e) {
 
                         }
@@ -219,7 +217,7 @@
                                     await axios.delete(url)
                                     dt.destroy()
                                     await self.load()
-                                    dt.create()
+                                    await self.$nextTick(() => { dt.create() })
                                 } catch (e) {
 
                                 }
@@ -232,10 +230,8 @@
                         let self = this
                         block.block();
                         try {
-                            await Promise.all([self.load()]).then((v) => {
-
-                            })
-                            dt.create()
+                            await Promise.all([self.load()])
+                            await self.$nextTick(() => { dt.create() })
 
                         } catch (e) {
 

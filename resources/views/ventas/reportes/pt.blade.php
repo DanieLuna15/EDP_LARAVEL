@@ -26,7 +26,7 @@
                 <div class="form-group">
                 <label>Clientes</label>
                 <div class="input-group mb-4">
-                    <select class="form-control" id="buscar_area1" v-model="cliente">
+                    <select class="form-control select_cliente" id="buscar_area1" v-model="cliente">
                     <option value="all">Todos</option>
                     <template v-for="m in clientes">
                         <option :value="m.id">{{m.nombre}}</option>
@@ -51,7 +51,7 @@
                 <div class="form-group">
                 <label>Usuario</label>
                 <div class="input-group mb-4">
-                    <select class="form-control" v-model="user">
+                    <select class="form-control select_usuario" v-model="user">
                     <option value="all">Todos</option>
                     <template v-for="m in users">
                         <option :value="m.id">{{m.nombre}}</option>
@@ -131,7 +131,39 @@ const {
                     cliente:'all'
                 }
             },
+            watch: {
+                users() { this.$nextTick(() => this.initSelectUsuario()); },
+                clientes() { this.$nextTick(() => this.initSelectCliente()); },
+                user(val) {
+                    this.$nextTick(() => $(".select_usuario").val(val ?? 'all').trigger('change.select2'));
+                },
+                cliente(val) {
+                    this.$nextTick(() => $(".select_cliente").val(val ?? 'all').trigger('change.select2'));
+                }
+            },
             methods: {
+                initSelectCliente() {
+                    const vm = this;
+                    const $sel = $(".select_cliente");
+                    try { $sel.select2('destroy'); } catch (e) {}
+                    $sel.select2({ placeholder: 'Seleccione un cliente', width: '100%' });
+                    $sel.off('change.select2.vue').on('change.select2.vue', function() {
+                        const val = $(this).val();
+                        vm.cliente = val === null ? 'all' : val;
+                    });
+                    $sel.val(vm.cliente ?? 'all').trigger('change.select2');
+                },
+                initSelectUsuario() {
+                    const vm = this;
+                    const $sel = $(".select_usuario");
+                    try { $sel.select2('destroy'); } catch (e) {}
+                    $sel.select2({ placeholder: 'Seleccione un usuario', width: '100%' });
+                    $sel.off('change.select2.vue').on('change.select2.vue', function() {
+                        const val = $(this).val();
+                        vm.user = val === null ? 'all' : val;
+                    });
+                    $sel.val(vm.user ?? 'all').trigger('change.select2');
+                },
                 async Save() {
                     try {
                         // let res = await axios.post(, this.model)
@@ -159,47 +191,25 @@ const {
 
                     }
                 },
-                async load() {
-
-                        let self = this
-
-                        try {
-                            await Promise.all([self.GET_DATA("{{url('api/ventaItemsPts')}}")]).then((v) => {
-                                self.data = v[0]
-                            })
-
-                        } catch (e) {
-
-                        }
-
-                },
+                // No precargar datos; solo consultar al hacer clic en Buscar
+                async load() { /* intencionalmente vacío */ },
                 async GetFechas() {
-
                         let self = this
-
                         try {
-
-                            dt.destroy()
-
-
-                           await axios.post("{{url('api/ventaItemsPts-fechas')}}",{
+                            block.block();
+                            dt.destroy();
+                            const res = await axios.post("{{url('api/ventaItemsPts-fechas')}}",{
                                 fecha_1: self.fecha_1,
                                 fecha_2: self.fecha_2,
-                                user:this.user,
-                                cliente:this.cliente
-                            }).then((res) => {
-                                self.data = res.data
-
-                            })
-                            // console.log(res)
-                            dt.create()
-
+                                user: this.user,
+                                cliente: this.cliente
+                            });
+                            self.data = res.data;
+                            await this.$nextTick(() => dt.create());
                         } catch (e) {
-
-                        }finally{
-
+                        } finally {
+                            block.unblock();
                         }
-
                 },
                 deleteItem(id) {
                     let self = this
@@ -243,25 +253,21 @@ const {
                     let self = this
                     block.block();
                     try {
-                        await Promise.all([self.load(),
-                        self.GET_DATA("{{url('api/users')}}"),
-                        self.GET_DATA("{{url('api/clientes')}}"),
-                        ]).then((v) => {
-                            self.users = v[1]
-                            self.clientes = v[2]
-                        })
-                        dt.create()
-
+                        const [usuarios, clientes] = await Promise.all([
+                            self.GET_DATA("{{url('api/users')}}"),
+                            self.GET_DATA("{{url('api/clientes')}}"),
+                        ]);
+                        self.users = usuarios;
+                        self.clientes = clientes;
+                        await this.$nextTick(() => {
+                            this.initSelectUsuario();
+                            this.initSelectCliente();
+                        });
+                        // no crear DT ni cargar datos hasta que el usuario pulse Buscar
                     } catch (e) {
-
                     } finally {
                         block.unblock();
                     }
-                    // do whatever you want if console is [object object] then stringify the response
-
-
-
-
                 })
             }
         }).mount('#meApp')

@@ -43,8 +43,8 @@ class ArqueoController extends Controller
     }
     public function listaArqueos($user, $sucursal)
     {
-        $lista = Arqueo::with(['CajaSucursalUsuario', 'ArqueoIngresos'])->where('sucursal_id', $sucursal)->where('user_id', $user)->where([['apertura', 1], ['estado', 1]])->get()->map(function ($arqueo) {
-            $arqueo->monto_total_ventas = $arqueo->ArqueoVentas->sum('monto');
+        $lista = Arqueo::with(['CajaSucursalUsuario', 'ArqueoIngresos', 'ArqueoVentas'])->where('sucursal_id', $sucursal)->where('user_id', $user)->where([['apertura', 1], ['estado', 1]])->get()->map(function ($arqueo) {
+            $arqueo->monto_total_ventas = $arqueo->ArqueoVentas->where('estado', 1)->sum('monto');
             return $arqueo;
         });
 
@@ -253,7 +253,9 @@ class ArqueoController extends Controller
             'venta.sucursal',
             'formapago',
             'user'
-        ])
+        ])->whereHas('venta', function ($q) {
+            $q->where('estado', '!=', 0);
+        })
             ->whereBetween('created_at', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'])
             ->where('estado', 1)
             ->get();
@@ -327,6 +329,9 @@ class ArqueoController extends Controller
             'formapago',
             'user'
         ])
+            ->whereHas('venta', function ($q) {
+                $q->where('estado', '!=', 0);
+            })
             ->where('user_id', $userId)
             ->whereBetween('created_at', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'])
             ->where('estado', 1)
@@ -362,6 +367,9 @@ class ArqueoController extends Controller
         }
 
         $ventas = ArqueoVenta::with(['venta.cliente', 'formapago', 'user'])
+            ->whereHas('venta', function ($q) {
+                $q->where('estado', '!=', 0);
+            })
             ->where('user_id', $user_id)
             ->whereBetween('created_at', [$fecha_inicio . ' 00:00:00', $fecha_fin . ' 23:59:59'])
             ->where('estado', 1)
@@ -418,7 +426,8 @@ class ArqueoController extends Controller
             'user'
         ])
             ->whereHas('venta', function ($q) use ($choferId) {
-                $q->where('chofer_id', $choferId);
+                $q->where('chofer_id', $choferId)
+                    ->where('estado', '!=', 0);
             })
             ->whereBetween('created_at', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'])
             ->where('estado', 1)

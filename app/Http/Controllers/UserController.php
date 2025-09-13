@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Log;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UsuarioSucursal;
+use Illuminate\Support\Facades\Hash;
+
 class UserController extends Controller
 {
     public function showDashboard()
@@ -83,7 +86,7 @@ class UserController extends Controller
         $log->save();
         /*FIN DEL LOG*/
         $sucursal = Auth()->user()->getSellingPointSucursal();
-         if (count($sucursal) > 0) {
+        if (count($sucursal) > 0) {
         } else {
             return response()->json(["success" => "false", "mensaje" => "No tiene ninguna sucursal Asignada"], Response::HTTP_UNAUTHORIZED);
         }
@@ -100,12 +103,14 @@ class UserController extends Controller
     {
         try {
             $this->validateData($request);
+            $pass = $request->password;
+
             $user            = new User();
             $user->nombre    = $request->nombre;
             $user->apellidos = $request->apellidos;
             $user->usuario   = $request->usuario;
             $user->correo    = $request->correo;
-            $user->password  = $request->password;
+            $user->password  = Hash::make($pass);
             $user->save();
             return response()->json(['success' => 'Usuario registrado correctamente.', 'data' => $user], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -204,12 +209,13 @@ class UserController extends Controller
         try {
             $request->merge(['id' => $user->id]); // Para excluir el usuario actual en validaciones únicas
             $this->validateData($request);
+            $pass = $request->password;
 
             $user->nombre    = $request->nombre;
             $user->apellidos = $request->apellidos;
             $user->usuario   = $request->usuario;
             $user->correo    = $request->correo;
-            $user->password  = $request->password;
+            $user->password  = Hash::make($pass);
             $user->save();
 
             return response()->json(['success' => 'Usuario actualizado correctamente.', 'data' => $user], 200);
@@ -238,7 +244,7 @@ class UserController extends Controller
     }
     public function menuRender($usuarioId)
     {
-       $rolUser = RolUser::where('usuario_id', $usuarioId)->first();
+        $rolUser = RolUser::where('usuario_id', $usuarioId)->first();
 
         if (!$rolUser) {
             return [];
@@ -261,10 +267,10 @@ class UserController extends Controller
             ->with('children')
             ->orderBy('order', 'asc')
             ->get();
-            
+
         return $this->buildMenuTree($menus, $menuRoles);
     }
-    
+
     private function buildMenuTree($menus, $menuRoles)
     {
         $resp = [];
@@ -383,7 +389,8 @@ class UserController extends Controller
         return ['roles' => $roles_->toArray(), 'rolUser' => $usuarioRolId];
     }
 
-    public function asignarPuntoVenta($usarioId, $puntoVentaId) {
+    public function asignarPuntoVenta($usarioId, $puntoVentaId)
+    {
         $puntoventaUsers = UsuarioSucursal::where('user_id', $usarioId)->first();
         if ($puntoventaUsers != null) {
             $puntoVenta = UsuarioSucursal::find($puntoventaUsers->id);
