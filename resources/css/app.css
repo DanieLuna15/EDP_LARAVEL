@@ -1,0 +1,10 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "apexcharts/dist/apexcharts.css";
+@import "sweetalert2/dist/sweetalert2.min.css";
+@import "flatpickr/dist/flatpickr.min.css";
+@import "select2/dist/css/select2.min.css";
+@import "dropify/dist/css/dropify.min.css";
+@import "datatables.net-dt/css/jquery.dataTables.min.css";
+
+/* Tus estilos propios */
+@import "./custom.css";
