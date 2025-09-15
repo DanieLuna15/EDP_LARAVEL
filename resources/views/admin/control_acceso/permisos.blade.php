@@ -312,12 +312,16 @@
                         }
                     },
                     async getMenus() {
+                        block.block();
                         try {
+
                             const res = await axios.get("{{ url('api/menu') }}")
                             this.menus = res.data
                             this.rebuildSelection()
                         } catch (e) {
                             // opcional: manejar error
+                        } finally{
+                            block.unblock();
                         }
                     },
                     openModal(action, role = null) {
@@ -1592,18 +1596,18 @@
             }
 
             /* .levels::-webkit-scrollbar {
-                                                                        height: 6px;
-                                                                    }
+                                                                                height: 6px;
+                                                                            }
 
-                                                                    .levels::-webkit-scrollbar-track {
-                                                                        background: #f1f1f1;
-                                                                        border-radius: 3px;
-                                                                    }
+                                                                            .levels::-webkit-scrollbar-track {
+                                                                                background: #f1f1f1;
+                                                                                border-radius: 3px;
+                                                                            }
 
-                                                                    .levels::-webkit-scrollbar-thumb {
-                                                                        background: #888;
-                                                                        border-radius: 3px;
-                                                                    } */
+                                                                            .levels::-webkit-scrollbar-thumb {
+                                                                                background: #888;
+                                                                                border-radius: 3px;
+                                                                            } */
 
             .level-col {
                 flex: 0 0 320px;
@@ -1637,18 +1641,18 @@
             }
 
             /* .level-list::-webkit-scrollbar {
-                                                                        width: 6px;
-                                                                    }
+                                                                                width: 6px;
+                                                                            }
 
-                                                                    .level-list::-webkit-scrollbar-track {
-                                                                        background: #f1f1f1;
-                                                                        border-radius: 3px;
-                                                                    }
+                                                                            .level-list::-webkit-scrollbar-track {
+                                                                                background: #f1f1f1;
+                                                                                border-radius: 3px;
+                                                                            }
 
-                                                                    .level-list::-webkit-scrollbar-thumb {
-                                                                        background: #888;
-                                                                        border-radius: 3px;
-                                                                    } */
+                                                                            .level-list::-webkit-scrollbar-thumb {
+                                                                                background: #888;
+                                                                                border-radius: 3px;
+                                                                            } */
 
             /* Estilo para el header de cada columna */
             .level-header {
