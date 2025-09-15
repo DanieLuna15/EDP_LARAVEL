@@ -298,14 +298,22 @@ class UserController extends Controller
     public function menuRol($rolId)
     {
         $menuRol_  = MenuRol::where('rol_id', $rolId)->where('check', true)->get()->pluck('menu_id');
-        $menus_    = Menu::with('subMenuN1')->where('menu_id', '=', null)->get();
+        // Eager load nivel 1 y sus hijos (nivel 2)
+        $menus_    = Menu::with(['subMenuN1' => function ($q) {
+            $q->orderBy('order', 'asc');
+        }, 'subMenuN1.children' => function ($q) {
+            $q->orderBy('order', 'asc');
+        }])->whereNull('menu_id')->orderBy('order', 'asc')->get();
+
         $menusResp = [];
         foreach ($menus_ as $key => $value) {
-            $subMenus        = $value->subMenuN1;
-            $subM_           = $this->verificaEstadoSubmenu($subMenus, $menuRol_);
+            $subMenus = $value->subMenuN1;
+            // Marca activos para nivel 1 y 2
+            $subM_ = $this->verificaEstadoSubmenu($subMenus, $menuRol_);
+            // Mantiene compatibilidad: adjunta sub_menu procesado y progreso
             $value->sub_menu = $subM_;
             $value->progreso = $this->progresoMenu($subM_);
-            $menusResp[]     = $value;
+            $menusResp[] = $value;
         }
         return ['menus' => $menusResp];
     }
@@ -342,13 +350,18 @@ class UserController extends Controller
         $resp = [];
         if (!is_array($subMenus)) {
             foreach ($subMenus as $key => $value) {
-                if (in_array($value->id, $arrayMenuUser->toArray())) {
-                    $value->active = true;
-                    $resp[] = $value;
-                } else {
-                    $value->active = false;
-                    $resp[] = $value;
+                // Activo si el menú está asignado al rol
+                $value->active = in_array($value->id, $arrayMenuUser->toArray());
+
+                // Si tiene hijos cargados, marcar también sus estados de forma recursiva
+                if (method_exists($value, 'relationLoaded') && $value->relationLoaded('children')) {
+                    $children = $value->children;
+                    if ($children) {
+                        $this->verificaEstadoSubmenu($children, $arrayMenuUser);
+                    }
                 }
+
+                $resp[] = $value;
             }
         }
         return $resp;

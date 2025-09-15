@@ -86,28 +86,26 @@
                     </div>
 
                     <div class="modal fade" :class="{ 'show': permissionModal, 'd-block': permissionModal }" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);" aria-hidden="true" v-if="permissionModal">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="permissionModalLabel">Administrar Roles y Accesos</h5>
-                                    <button type="button" class="btn-close" @click="permissionModal = false"><i class="mdi mdi-close"></i></button>
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                            <div class="modal-content permission-modal">
+                                <div class="modal-header py-2">
+                                    <h5 class="modal-title m-0" id="permissionModalLabel"><i class="mdi mdi-shield-account-outline me-2"></i> Administrar Roles y Accesos</h5>
+                                    <button type="button" class="btn-close btn-close-white" @click="permissionModal = false" aria-label="Cerrar"></button>
                                 </div>
                                 <div class="modal-body">
                                     <div v-if="selectUsuario">
-                                        <p class="text-secondary fw-bold">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-                                                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-                                                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.568 13.882 5.518 14 8 14s4.432-.118 6.468-2.63A7 7 0 0 0 8 1z"/>
-                                            </svg>
-                                            {{ selectUsuario.usuario }}
-                                        </p>
+                                        <div class="d-flex align-items-center gap-2 text-secondary fw-bold mb-2">
+                                            <i class="mdi mdi-account-circle-outline fs-5"></i>
+                                            <span>{{ selectUsuario.usuario }}</span>
+                                        </div>
                                     </div>
-                                    <hr>
-                                    <h6 class="fw-bold text-primary">ROL:</h6>
+                                    <hr class="my-2">
+                                    <h6 class="section-title"><i class="mdi mdi-account-badge-outline me-2"></i>Rol</h6>
                                     <div class="d-flex flex-wrap gap-2 mb-3">
                                         <button type="button" class="btn btn-outline-primary"
                                             v-for="role in roles" :key="role.id"
                                             :class="{'active btn-primary text-white': role.id === selectedItemRol}"
+                                            style="border-radius: 50px;"
                                             @click="btnChipRol(role)">
                                             {{ role.name }}
                                         </button>
@@ -115,7 +113,7 @@
                                     <div v-if="!selectedItemRol" class="alert alert-warning" role="alert">
                                         Seleccione un ROL
                                     </div>
-                                    <hr class="mt-4 mb-3">
+                                    <hr class="mt-3 mb-2">
                                     <h6 class="fw-bold text-primary">SUCURSAL:</h6>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
@@ -132,9 +130,9 @@
                                         </div>
                                         <div class="col-md-6"></div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <h6 class="fw-bold text-primary">MENUS:</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-4 mb-0">
+                                            <h6 class="section-title"><i class="mdi mdi-view-list-outline me-2"></i>Menús</h6>
                                             <div class="list-group">
                                                 <button type="button" class="list-group-item list-group-item-action"
                                                     v-for="(menu, i) in menus" :key="i"
@@ -144,7 +142,7 @@
                                                         <span>{{ menu.label }}</span>
                                                         <small class="text-muted">({{ menu.progreso.countActive }}/{{ menu.progreso.total }})</small>
                                                     </div>
-                                                    <div class="progress mt-2" style="height: 5px;">
+                                                    <div class="progress mt-2" style="height: 6px; border-radius: 4px;">
                                                         <div class="progress-bar" role="progressbar"
                                                             :style="{ width: menu.progreso.porcentaje + '%' }"
                                                             :aria-valuenow="menu.progreso.porcentaje"
@@ -153,25 +151,80 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <h6 class="fw-bold text-primary">SUB MENUS:</h6>
-                                            <div class="list-group scroll-submenu" style="height: 370px; overflow-y: auto;">
+                                        <div class="col-md-4">
+                                            <h6 class="section-title"><i class="mdi mdi-format-list-bulleted-square me-2"></i>Sub Menús</h6>
+                                            <div v-if="subMenus && subMenus.length" class="mb-2">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <small class="text-muted">({{ subMenusProgress.countActive }}/{{ subMenusProgress.total }})</small>
+                                                </div>
+                                                <div class="progress mt-1" style="height: 5px;">
+                                                    <div class="progress-bar" role="progressbar"
+                                                        :style="{ width: subMenusProgress.porcentaje + '%' }"
+                                                        :aria-valuenow="subMenusProgress.porcentaje"
+                                                        aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                            <div class="list-group scroll-submenu">
                                                 <div v-if="subMenus">
-                                                    <div class="list-group-item" v-for="subMenu in subMenus" :key="subMenu.id">
+                                                    <button type="button" class="list-group-item list-group-item-action"
+                                                        v-for="(subMenu, j) in subMenus" :key="subMenu.id"
+                                                        :class="{'active': j === selectedItemSubMenuIndex}"
+                                                        @click="btnSelectSubMenu(subMenu, j)">
                                                         <div class="d-flex justify-content-between align-items-center">
-                                                            <span>{{ subMenu.label }}</span>
-                                                            <div class="form-check form-switch">
-                                                                <input class="form-check-input" type="checkbox" role="switch"
-                                                                    :id="'subMenuSwitch' + subMenu.id"
-                                                                    :checked="subMenu.active"
-                                                                    @change="btnItemSubMenu(subMenu)">
+                                                            <span class="text-truncate">{{ subMenu.label }}</span>
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                <small v-if="subMenu.children && subMenu.children.length" class="text-muted">({{ getProgress(subMenu).countActive }}/{{ getProgress(subMenu).total }})</small>
+                                                                
+                                                                <div class="form-check form-switch p-4">
+                                                                    <input class="form-check-input ms-3" type="checkbox" role="switch"
+                                                                        :id="'subMenuSwitch' + subMenu.id"
+                                                                        :checked="subMenu.active"
+                                                                        @change.stop="btnItemSubMenu(subMenu)">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div v-if="subMenu.children && subMenu.children.length" class="mt-2">
+                                                            <div class="progress" style="height: 4px; border-radius: 4px;">
+                                                                <div class="progress-bar" role="progressbar"
+                                                                    :style="{ width: getProgress(subMenu).porcentaje + '%' }"
+                                                                    :aria-valuenow="getProgress(subMenu).porcentaje"
+                                                                    aria-valuemin="0" aria-valuemax="100"></div>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6 class="section-title"><i class="mdi mdi-subdirectory-arrow-right me-2"></i>Sub Menús N2</h6>
+                                            <div class="list-group scroll-submenu">
+                                                <div v-if="selectedItemSubMenuIndex === null && !subMenusN2" class="text-muted p-3">
+                                                    Seleccione un sub menú.
+                                                </div>
+                                                <div v-else-if="subMenusN2 && subMenusN2.length">
+                                                    <div class="list-group-item" v-for="child in subMenusN2" :key="child.id">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span>{{ child.label }}</span>
+                                                            <div class="form-check form-switch m-0">
+                                                                <input class="form-check-input ms-3" type="checkbox" role="switch"
+                                                                    :id="'subMenuN2Switch' + child.id"
+                                                                    :checked="child.active"
+                                                                    @change="btnItemSubMenu(child)">
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div v-else class="text-muted p-3">
+                                                    No hay sub menús de segundo nivel.
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="modal-footer py-2">
+                                    <button type="button" class="btn btn-light" @click="permissionModal = false">
+                                        <i class="mdi mdi-close-circle-outline me-1"></i> Cerrar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -180,6 +233,16 @@
             </div>
         @endverbatim
     @endslot
+    @slot('style')
+        <style>
+            .permission-modal .section-title { font-weight: 700; color: #0d6efd; display: flex; align-items: center; margin: 0 0 .5rem 0; }
+            .permission-modal .scroll-submenu { max-height: 50vh; overflow-y: auto; }
+            .permission-modal .list-group-item { border: 0; border-bottom: 1px solid #edf1f5; }
+            .permission-modal .list-group-item:last-child { border-bottom: 0; }
+            .permission-modal .list-group-item.active { background: #eef6ff; color: #0d6efd; border-color: transparent; }
+            .permission-modal .form-check-input { cursor: pointer; }
+        </style>
+    @endslot
     @slot('script')
         <script type="module">
             import Block from "{{ asset('config/block.js') }}";
@@ -187,25 +250,28 @@
             let block = new Block();
 
             const app = createApp({
-                data() {
-                    return {
-                        data: [],
-                        search: '',
-                        userId: {{ auth()->id() }},
-                        loading: false,
-                        // Datos para el modal de permisos
-                        dialogPersmisos: null,
-                        selectUsuario: null,
-                        puntosVenta: null,
-                        selectPuntoVenta: 0,
-                        roles: null,
-                        selectedItemRol: null,
-                        menus: [],
-                        selectedItemMenuIndex: null,
-                        subMenus: null,
-                        permissionModal:false,
-                    };
-                },
+                        data() {
+                            return {
+                                data: [],
+                                search: '',
+                                userId: {{ auth()->id() }},
+                                loading: false,
+                                // Datos para el modal de permisos
+                                dialogPersmisos: null,
+                                selectUsuario: null,
+                                puntosVenta: null,
+                                selectPuntoVenta: 0,
+                                roles: null,
+                                selectedItemRol: null,
+                                menus: [],
+                                selectedItemMenuIndex: null,
+                                subMenus: null,
+                                // Tercer nivel
+                                selectedItemSubMenuIndex: null,
+                                subMenusN2: null,
+                                permissionModal:false,
+                            };
+                        },
                 computed: {
                     filteredUsers() {
                         if (!this.search) {
@@ -218,9 +284,24 @@
                                    (item.usuario && item.usuario.toLowerCase().includes(searchTerm)) ||
                                    (item.correo && item.correo.toLowerCase().includes(searchTerm));
                         });
+                    },
+                    subMenusProgress() {
+                        const total = Array.isArray(this.subMenus) ? this.subMenus.length : 0;
+                        const countActive = total ? this.subMenus.filter(s => !!s.active).length : 0;
+                        const porcentaje = countActive === 0 || total === 0 ? 0 : (100 / (total / countActive));
+                        return { porcentaje, countActive, total };
                     }
                 },
                 methods: {
+                    getProgress(item) {
+                        if (!item || !Array.isArray(item.children)) {
+                            return { porcentaje: 0, countActive: 0, total: 0 };
+                        }
+                        const total = item.children.length;
+                        const countActive = item.children.filter(c => !!c.active).length;
+                        const porcentaje = total === 0 ? 0 : (countActive * 100) / total;
+                        return { porcentaje, countActive, total };
+                    },
                     async load() {
                         this.loading = true;
                         try {
@@ -390,6 +471,13 @@
                     btnItemMenu(item, index) {
                         this.selectedItemMenuIndex = index;
                         this.subMenus = item.sub_menu_n1;
+                        // Reset selección de nivel 2
+                        this.selectedItemSubMenuIndex = null;
+                        this.subMenusN2 = null;
+                    },
+                    btnSelectSubMenu(item, index) {
+                        this.selectedItemSubMenuIndex = index;
+                        this.subMenusN2 = item.children || [];
                     },
                     async btnItemSubMenu(item) {
                         const estado_ = item.active;
