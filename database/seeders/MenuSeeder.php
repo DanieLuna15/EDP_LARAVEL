@@ -168,6 +168,73 @@ class MenuSeeder extends Seeder
             'menu_id' => $controlSubMenu->id,
         ]);
 
+$documentacionSubMenu = Menu::create([
+            'icon'    => 'mdiAccountMultiple',
+            'label'   => 'Documentacion',
+            'order'   => 3,
+            'level'   => 1,
+            'menu_id' => $adminMenu->id,
+        ]);
+
+        //submenú "Permisos" Nivel 2
+        Menu::create([
+            'icon'    => 'mdiAccountMultiple',
+            'label'   => 'Admin',
+            'order'   => 1,
+            'level'   => 2,
+            'route'   => 'admin/documentacion/admin',
+            'menu_id' => $documentacionSubMenu->id,
+        ]);
+        Menu::create([
+            'icon'    => 'mdiAccountMultipleRemove',
+            'label'   => 'Listado',
+            'order'   => 2,
+            'level'   => 2,
+            'route'   => 'admin/documentacion',
+            'menu_id' => $documentacionSubMenu->id,
+        ]);
+
+Menu::create([
+            'icon'    => 'mdiHomeCircle',
+            'label'   => 'Logs',
+            'order'   => 4,
+            'level'   => 1,
+            'route'   => 'admin/logs',
+            'menu_id' => $adminMenu->id,
+        ]);
+Menu::create([
+            'icon'    => 'mdiHomeCircle',
+            'label'   => 'Storage',
+            'order'   => 5,
+            'level'   => 1,
+            'route'   => 'admin/storage',
+            'menu_id' => $adminMenu->id,
+        ]);
+Menu::create([
+            'icon'    => 'mdiHomeCircle',
+            'label'   => 'Backup DB',
+            'order'   => 6,
+            'level'   => 1,
+            'route'   => 'admin/backup',
+            'menu_id' => $adminMenu->id,
+        ]);
+Menu::create([
+            'icon'    => 'mdiHomeCircle',
+            'label'   => 'Restore DB',
+            'order'   => 7,
+            'level'   => 1,
+            'route'   => 'admin/restore',
+            'menu_id' => $adminMenu->id,
+        ]);
+Menu::create([
+            'icon'    => 'mdiHomeCircle',
+            'label'   => 'Vaciar DB',
+            'order'   => 8,
+            'level'   => 1,
+            'route'   => 'admin/truncate',
+            'menu_id' => $adminMenu->id,
+        ]);
+
         // Menú principal "RRHH"
         $rrhhMenu = Menu::create([
             'icon'  => 'mdiDatabase',

@@ -14,9 +14,15 @@ class MenuController extends Controller
      */
     public function index()
     {
-        $menus = Menu::with(['subMenuN1' => function ($query) {
-            $query->orderBy('order', 'asc');
-        }])->where('menu_id', '=', null)->orderBy('order', 'asc')->get();
+        $menus = Menu::with([
+            'subMenuN1' => function ($query) {
+                $query->where('estado', true)->orderBy('order', 'asc');
+            },
+            // Cargar nietos (nivel 2) de cada submenú
+            'subMenuN1.children' => function ($query) {
+                $query->where('estado', true)->orderBy('order', 'asc');
+            },
+        ])->whereNull('menu_id')->where('estado', true)->orderBy('order', 'asc')->get();
         return $menus;
     }
 
@@ -90,31 +96,11 @@ class MenuController extends Controller
      */
     public function destroy($id)
     {
-        $menu_ = Menu::where('menu_id', $id)->get();
-        $total = count($menu_);
-
-        if ($total != 0) {
-            $result = [
-                'code'    => 406,
-                'message' => "El menu tiene asignado sub menus ",
-            ];
-            return response()->json($result, 406);
-        } else {
-            $menuRol_     = MenuRol::where('menu_id', $id)->get();
-            $totalMenuRol = count($menuRol_);
-
-            if ($totalMenuRol != 0) {
-                $result = ['code' => 406,
-                    'message'         => "El menu esta asignado a un rol ",
-                ];
-                return response()->json($result, 406);
-            } else {
-                $menu = Menu::find($id);
-                $menu->delete();
-                return "delete";
-            }
-
-        }
+        // Desactivar (soft disable) cambiando estado = 0 en lugar de eliminar
+        $menu = Menu::findOrFail($id);
+        $menu->estado = false;
+        $menu->save();
+        return response()->json(['status' => 'disabled', 'id' => $menu->id]);
     }
     public function cambiarOrden(Request $request)
     {

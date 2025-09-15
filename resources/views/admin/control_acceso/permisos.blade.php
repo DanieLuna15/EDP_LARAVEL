@@ -83,7 +83,7 @@
                                                 <div class="d-flex align-items-center">
                                                     <span class="handle me-2"><i class="mdi mdi-drag-variant text-secondary"></i></span>
                                                     <span class="me-3">
-                                                        <i :class="'mdi mdi-' + item.icon_mdi" class="fs-4 text-purple"></i>
+                                                        <i :class="getMdiClass(item.icon_mdi)" class="fs-4 text-purple"></i>
                                                     </span>
                                                     <span class="fw-bold">{{ item.label }}</span>
                                                 </div>
@@ -122,10 +122,12 @@
                                                 @end="dragSubMenu = false"
                                                 handle=".handle">
                                                 <template #item="{ element: item }">
-                                                    <li class="list-group-item d-flex align-items-center justify-content-between my-2 rounded">
+                                                    <li class="list-group-item d-flex align-items-center justify-content-between my-2 rounded"
+                                                        :class="{'list-item-selected': itemSelectSubMenu && itemSelectSubMenu.id === item.id}"
+                                                        @click="btnItemSubMenu(item)">
                                                         <div class="d-flex align-items-center">
                                                             <span class="handle me-2"><i class="mdi mdi-drag-variant text-secondary"></i></span>
-                                                            <span class="me-3"><i :class="'mdi mdi-' + item.icon_mdi" class="fs-4 text-purple"></i></span>
+                                                            <span class="me-3"><i :class="getMdiClass(item.icon_mdi)" class="fs-4 text-purple"></i></span>
                                                             <span class="fw-bold">{{ item.label }}</span>
                                                         </div>
                                                         <div class="d-flex align-items-center">
@@ -140,6 +142,40 @@
                                                 </template>
                                             </draggable>
                                         </ul>
+                                        <div class="mt-3" v-if="itemSelectSubMenu">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0 text-muted">{{ itemSelectSubMenu.label }} / Sub menús</h6>
+                                                <button class="btn btn-primary btn-sm" @click="btnNuevoMenu(itemSelectSubMenu.id)">
+                                                    <i class="mdi mdi-plus me-1"></i> Nuevo
+                                                </button>
+                                            </div>
+                                            <ul class="list-group list-group-flush">
+                                                <draggable
+                                                    v-model="grandMenus"
+                                                    item-key="id"
+                                                    v-bind="dragOptions"
+                                                    :move="checkMoveMenu"
+                                                    handle=".handle">
+                                                    <template #item="{ element: item }">
+                                                        <li class="list-group-item d-flex align-items-center justify-content-between my-2 rounded">
+                                                            <div class="d-flex align-items-center">
+                                                                <span class="handle me-2"><i class="mdi mdi-drag-variant text-secondary"></i></span>
+                                                                <span class="me-3"><i :class="getMdiClass(item.icon_mdi)" class="fs-4 text-purple"></i></span>
+                                                                <span class="fw-bold">{{ item.label }}</span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center">
+                                                                <button class="btn btn-link text-danger p-0 me-2" @click.stop="btnItemMenuDelete(item)">
+                                                                    <i class="mdi mdi-delete-forever fs-5"></i>
+                                                                </button>
+                                                                <button class="btn btn-link text-primary p-0 me-2" @click.stop="btnItemMenuEdit(item)">
+                                                                    <i class="mdi mdi-pencil fs-5"></i>
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                    </template>
+                                                </draggable>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -199,9 +235,13 @@
 
                                 <div class="mb-3">
                                     <label for="iconoMenu" class="form-label">Ícono</label>
-                                     <select class="form-control" id="iconoMenu" v-model="formMenu.icon" required>
+                                    <div class="icon-preview mb-2">
+                                        <i :class="getMdiClass(formMenu.icon)" class="fs-3"></i>
+                                        <small>Vista previa</small>
+                                    </div>
+                                    <select ref="selectIcon" class="form-control select2-icons" id="iconoMenu" v-model="formMenu.icon" required>
                                         <option disabled value="">Seleccione un ícono</option>
-                                        <option v-for="item in menuList" :value="item.icon">
+                                        <option v-for="item in menuList" :value="item.icon" :data-icon="item.icon">
                                             {{ item.text }}
                                         </option>
                                     </select>
@@ -223,6 +263,22 @@
     @endslot
 
     @slot('script')
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <style>
+            .select2-results__option .mdi { margin-right: .5rem; font-size: 1.1rem; vertical-align: middle; }
+            .select2-selection__rendered .mdi { margin-right: .35rem; vertical-align: middle; }
+            .select2-container .select2-selection--single { height: calc(2.25rem + 2px); }
+            .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 2.25rem; }
+            .select2-container--default .select2-selection--single .select2-selection__arrow { height: 2.25rem; }
+            /* Asegurar ancho correcto dentro del modal */
+            .select2-container { width: 100% !important; }
+            .select2-dropdown { width: 100% !important; min-width: 100% !important; box-sizing: border-box; }
+            .select2-results__options { max-height: 280px !important; }
+            /* Ajuste menor para la fila de preview */
+            .icon-preview { display: flex; align-items: center; gap: .5rem; color: #6c757d; }
+        </style>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vuedraggable@next/dist/vuedraggable.umd.js"></script>
         <script type="module">
@@ -241,6 +297,8 @@
                     roles: [],
                     menus: [],
                     subMenus: [],
+                    itemSelectSubMenu: null,
+                    grandMenus: [],
                     roleForm: { id: null, name: '' },
                     modalTitle: '',
                     editMode: false,
@@ -281,8 +339,16 @@
                         let res = await axios.get("{{ url('api/menu') }}")
                         this.menus = res.data
                         if (this.itemSelectMenu) {
-                            let menu_ = this.menus.find(x => x.id == this.itemSelectMenu.id)
-                            this.subMenus = menu_ ? menu_.sub_menu_n1 : []
+                            const menu_ = this.menus.find(x => x.id == this.itemSelectMenu.id)
+                            this.subMenus = menu_ ? (menu_.sub_menu_n1 || []) : []
+                            if (this.itemSelectSubMenu) {
+                                const sub = this.subMenus.find(s => s.id == this.itemSelectSubMenu.id)
+                                this.itemSelectSubMenu = sub || null
+                                this.grandMenus = sub && sub.children ? sub.children : []
+                            }
+                        } else {
+                            this.itemSelectSubMenu = null
+                            this.grandMenus = []
                         }
                     } catch (e) {}
                 },
@@ -327,6 +393,12 @@
                 btnItemMenu(item) {
                     this.itemSelectMenu = item
                     this.subMenus = item.sub_menu_n1
+                    this.itemSelectSubMenu = null
+                    this.grandMenus = []
+                },
+                btnItemSubMenu(item) {
+                    this.itemSelectSubMenu = item
+                    this.grandMenus = item.children || []
                 },
                 btnNuevoMenu(nivel) {
                     this.menuNivel = nivel;
@@ -337,6 +409,9 @@
                     };
                     this.isFormMenuEdit = false;
                     this.dialogMenu = true;
+                    this.$nextTick(() => {
+                        this.initSelect2Icons();
+                    });
                 },
                 btnNuevoSubMenu(menuId) {
                     const menu = this.menus.find(m => m.id === menuId)
@@ -557,59 +632,206 @@
                     this.isFormMenuEdit = true;
                     this.dialogMenu = true;
                     this.formMenu = { ...item };
-                    this.formMenu.icon = `mdi mdi-${item.icon_mdi}`;
+                    const current = item.icon_mdi || ''
+                    this.formMenu.icon = current.replace(/^mdi-/, '')
+                    this.$nextTick(() => {
+                        this.initSelect2Icons();
+                        if (this.$refs.selectIcon && window.jQuery) {
+                            const $el = window.jQuery(this.$refs.selectIcon);
+                            if ($el.length && $el.data('select2')) {
+                                $el.val(this.formMenu.icon).trigger('change.select2');
+                            }
+                        }
+                    });
                 },
 
                 submitMenu: function () {
                     this.btnLoadingMenu = true;
-                    var dataForm = this.formMenu;
+                    const dataForm = this.formMenu;
                     if (this.isFormMenuEdit) {
-                        var urlEdit ="{{ url('api/menu/') }}" + dataForm.id;
+                        const urlEdit = "{{ url('api/menu') }}/" + dataForm.id;
+                        const dataUpdate = { ...dataForm, icon: this.normalizeIcon(dataForm.icon) };
                         axios
-                            .put(urlEdit, dataForm)
+                            .put(urlEdit, dataUpdate)
                             .then((response) => {
                                 this.getMenus();
                                 this.dialogMenu = false;
                                 this.btnLoadingMenu = false;
-                                this.snackbar = {
-                                    status: true,
-                                    text: "Registro Editado",
-                                    color: "primary",
-                                };
+                                this.snackbar = { status: true, text: "Registro Editado", color: "primary" };
                             })
-                            .catch((error) => {});
+                            .catch((error) => { this.btnLoadingMenu = false; });
                     } else {
-                        var dataSend = dataForm;
-                        dataSend.order = this.menus.length + 1;
-                        if (this.itemSelectMenu != null) {
-                            dataSend.menu_id = this.itemSelectMenu.id;
-                            dataSend.level = 1;
-                            dataSend.order = this.subMenus.length + 1;
+                        const dataSend = { ...dataForm, icon: this.normalizeIcon(dataForm.icon) };
+                        if (this.menuNivel === 0) {
+                            dataSend.menu_id = null;
+                            dataSend.level = 0;
+                            dataSend.order = this.menus.length + 1;
+                        } else {
+                            const parent = this.findMenuById(this.menuNivel);
+                            dataSend.menu_id = this.menuNivel; // id del menú padre
+                            const parentLevel = parent && parent.level != null ? parent.level : 0;
+                            dataSend.level = parentLevel + 1;
+                            if (parentLevel === 0) {
+                                dataSend.order = this.subMenus.length + 1;
+                            } else {
+                                dataSend.order = (this.grandMenus ? this.grandMenus.length : 0) + 1;
+                            }
                         }
 
                         axios
-                            .post("{{ url('api/menu/') }}", dataSend)
+                            .post("{{ url('api/menu') }}", dataSend)
                             .then((response) => {
-                                this.subMenus.push(response.data);
+                                // insertar en la colección adecuada según el nivel del padre
+                                if (this.menuNivel === 0) {
+                                    this.menus.push(response.data);
+                                } else {
+                                    const parent = this.findMenuById(this.menuNivel);
+                                    if (parent) {
+                                        if ((parent.level ?? 0) === 0) {
+                                            this.subMenus.push(response.data);
+                                        } else {
+                                            if (!this.itemSelectSubMenu) this.itemSelectSubMenu = parent;
+                                            if (!this.grandMenus) this.grandMenus = [];
+                                            this.grandMenus.push(response.data);
+                                        }
+                                    }
+                                }
                                 this.getMenus();
                                 this.dialogMenu = false;
                                 this.btnLoadingMenu = false;
-                                this.snackbar = {
-                                    status: true,
-                                    text: "Nuevo Registro",
-                                    color: "primary",
-                                };
+                                this.snackbar = { status: true, text: "Nuevo Registro", color: "primary" };
                             })
-                            .catch((error) => {});
+                            .catch((error) => { this.btnLoadingMenu = false; });
                     }
+                },
+                normalizeIcon(icon) {
+                    const val = icon || ''
+                    return val.startsWith('mdi-') ? val : `mdi-${val}`
+                },
+                async btnItemMenuDelete(item) {
+                    try {
+                        const will = await swal({
+                            title: 'Desactivar',
+                            text: `¿Desea desactivar "${item.label}"?`,
+                            icon: 'warning',
+                            buttons: ['Cancelar', 'Sí'],
+                            dangerMode: true
+                        });
+                        if (!will) return;
+                        await axios.delete(`{{ url('api/menu') }}/${item.id}`)
+                        // limpiar selección si aplica
+                        if (this.itemSelectMenu && this.itemSelectMenu.id === item.id) {
+                            this.itemSelectMenu = null;
+                            this.subMenus = [];
+                            this.itemSelectSubMenu = null;
+                            this.grandMenus = [];
+                        }
+                        if (this.itemSelectSubMenu && this.itemSelectSubMenu.id === item.id) {
+                            this.itemSelectSubMenu = null;
+                            this.grandMenus = [];
+                        }
+                        await this.getMenus();
+                        swal({ title: 'Hecho', text: 'Menú desactivado', icon: 'success', button: 'OK' });
+                    } catch (e) {
+                        swal({ title: 'Error', text: 'No se pudo desactivar', icon: 'error', button: 'Aceptar' });
+                    }
+                },
+                getMdiClass(iconOrSlug) {
+                    const val = iconOrSlug || ''
+                    const slug = val.startsWith('mdi-') ? val : (val ? `mdi-${val}` : '')
+                    return slug ? `mdi ${slug}` : ''
+                },
+                initSelect2Icons() {
+                    const el = this.$refs.selectIcon;
+                    if (!el || !window.jQuery) return;
+                    const $el = window.jQuery(el);
+                    try {
+                        if ($el.data('select2')) {
+                            $el.select2('destroy');
+                        }
+                    } catch (e) {}
+                    const self = this;
+                    const $parent = window.jQuery(this.$refs.selectIcon).closest('.modal');
+                    $el.select2({
+                        width: '100%',
+                        dropdownParent: $parent.length ? $parent : undefined,
+                        templateResult: function (state) {
+                            if (!state.id) return state.text;
+                            const icon = state.element && state.element.dataset ? state.element.dataset.icon : '';
+                            const cls = icon ? `mdi mdi-${icon}` : '';
+                            const label = state.text || icon || '';
+                            return window.jQuery(`<span><i class="${cls}"></i> ${label}</span>`);
+                        },
+                        templateSelection: function (state) {
+                            if (!state.id) return state.text;
+                            const icon = state.element && state.element.dataset ? state.element.dataset.icon : '';
+                            const cls = icon ? `mdi mdi-${icon}` : '';
+                            const label = state.text || icon || '';
+                            return window.jQuery(`<span><i class="${cls}"></i> ${label}</span>`);
+                        },
+                        escapeMarkup: function (m) { return m; },
+                        dropdownAutoWidth: false,
+                        placeholder: 'Seleccione un ícono',
+                    }).on('change', function () {
+                        const val = $el.val();
+                        if (self.formMenu.icon !== val) {
+                            self.formMenu.icon = val;
+                        }
+                    }).on('select2:open', function () {
+                        const inst = $el.data('select2');
+                        if (inst && inst.$dropdown) {
+                            const w = $el.outerWidth();
+                            inst.$dropdown.css({ minWidth: w, width: w });
+                        }
+                    });
+                    if (this.formMenu && this.formMenu.icon) {
+                        $el.val(this.formMenu.icon).trigger('change.select2');
+                    }
+                },
+                destroySelect2Icons() {
+                    const el = this.$refs.selectIcon;
+                    if (!el || !window.jQuery) return;
+                    const $el = window.jQuery(el);
+                    try {
+                        if ($el.data('select2')) {
+                            $el.select2('destroy');
+                        }
+                    } catch (e) {}
                 },
 
                 btnItemMenuDelete(item) {
-                    // Lógica para eliminar el menú
+                },
+                // Buscar un menú por id en todo el árbol
+                findMenuById(id) {
+                    for (const m of this.menus) {
+                        if (m.id === id) return m;
+                        const found = (m.sub_menu_n1 || []).find(sm => sm.id === id) || null;
+                        if (found) return found;
+                        // revisar nietos si ya están cargados en sub_menu_n1.children
+                        for (const sm of (m.sub_menu_n1 || [])) {
+                            if (sm.children) {
+                                const g = sm.children.find(ch => ch.id === id);
+                                if (g) return g;
+                            }
+                        }
+                    }
+                    return null;
                 }
             },
             watch: {
-                // Aquí puedes añadir watchers si necesitas reaccionar a cambios en formMenu.icon
+                dialogMenu(val) {
+                    if (!val) {
+                        this.destroySelect2Icons();
+                    }
+                },
+                'formMenu.icon'(val) {
+                    const el = this.$refs.selectIcon;
+                    if (!el || !window.jQuery) return;
+                    const $el = window.jQuery(el);
+                    if ($el.data('select2') && $el.val() !== val) {
+                        $el.val(val).trigger('change.select2');
+                    }
+                }
             }
         }).mount('#meApp')
         </script>
