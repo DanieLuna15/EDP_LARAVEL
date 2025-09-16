@@ -61,12 +61,14 @@ class Venta extends Model
     {
         return $this->hasMany(ArqueoVenta::class, 'venta_id')->latest();  // Usamos `hasMany` ya que una venta puede tener varios arqueos
     }
-
     public function VentaCaja(){
         return $this->hasOne(VentaCaja::class);
     }
     public function VentaGastos()
     {
         return $this->hasMany(VentaGasto::class);
+    }
+    public function Tipopago(){
+        return $this->belongsTo(Tipopago::class, 'metodo_pago');
     }
 }

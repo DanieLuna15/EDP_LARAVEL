@@ -807,16 +807,23 @@
                         //     merma_bruta_sobra
                         // merma_neta = merma_neta - merma_neta_2 + merma_neta_al - merma_neta_desplegue - merma_neta_sobra
 
-                        cajas = cajas - cajas_2 - cajas_desplegue - cajas_transformacion -
-                            cajas_sobra
-                        pollos = pollos - pollos_2 - pollos_desplegue - pollos_transformacion
-                        bruto = bruto - peso_bruto_desplegue - bruto_transformacion -
-                            bruto_sobra + peso_subdetalle
-                        neto = neto - neto_2 - peso_neto_desplegue - neto_transformacion -
-                            neto_sobra + peso_subdetalle
-                        merma_bruta = merma_bruta - merma_bruta_2 - merma_bruta_desplegue -
-                            merma_bruta_sobra
-                        merma_neta = merma_neta - merma_neta_2 - merma_neta_desplegue - merma_neta_sobra
+                        // cajas = cajas - cajas_2 - cajas_desplegue - cajas_transformacion -
+                        //     cajas_sobra
+                        // pollos = pollos - pollos_2 - pollos_desplegue - pollos_transformacion
+                        // bruto = bruto - peso_bruto_desplegue - bruto_transformacion -
+                        //     bruto_sobra + peso_subdetalle
+                        // neto = neto - neto_2 - peso_neto_desplegue - neto_transformacion -
+                        //     neto_sobra + peso_subdetalle
+                        // merma_bruta = merma_bruta - merma_bruta_2 - merma_bruta_desplegue -
+                        //     merma_bruta_sobra
+                        // merma_neta = merma_neta - merma_neta_2 - merma_neta_desplegue - merma_neta_sobra
+
+                        cajas = Math.max(cajas - cajas_2 - cajas_desplegue - cajas_transformacion - cajas_sobra, 0);
+                        pollos = Math.max(pollos - pollos_2 - pollos_desplegue - pollos_transformacion, 0);
+                        bruto = Math.max(bruto - peso_bruto_desplegue - bruto_transformacion - bruto_sobra + peso_subdetalle, 0);
+                        neto = Math.max(neto - neto_2 - peso_neto_desplegue - neto_transformacion - neto_sobra + peso_subdetalle, 0);
+                        merma_bruta = Math.max(merma_bruta - merma_bruta_2 - merma_bruta_desplegue - merma_bruta_sobra, 0);
+                        merma_neta = Math.max(merma_neta - merma_neta_2 - merma_neta_desplegue - merma_neta_sobra, 0);
 
                         let pollos_caja = cajas > 0 ? (pollos / cajas) : 0;
                         return {

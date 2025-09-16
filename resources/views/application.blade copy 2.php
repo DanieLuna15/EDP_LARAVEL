@@ -49,7 +49,6 @@
         }
     </style>
     <style>
-        /* Submenús: alinear icono + texto a la izquierda y evitar espacios forzados */
         .submenu>li>a,
         .sub-submenu>li>a {
             display: flex;
@@ -77,25 +76,10 @@
             flex-shrink: 0;
         }
 
-        /* Forzar overrides sobre reglas del tema que usan space-between */
         .topbar-nav.header nav#topbar ul.menu-categories li.menu .submenu li a,
         .topbar-nav.header nav#topbar ul.menu-categories li.menu .submenu li.sub-sub-submenu-list .sub-submenu li a {
             justify-content: flex-start !important;
             gap: .5rem;
-        }
-
-        /* Evitar que contenedores flex colapsen el texto */
-        .menu.single-menu,
-        .submenu,
-        .sub-submenu {
-            min-width: 0;
-        }
-
-        /* Opcional: limitar ancho para un wrap más predecible (ajusta o quita) */
-        .menu.single-menu>a,
-        .submenu>li>a,
-        .sub-submenu>li>a {
-            max-width: 320px;
         }
     </style>
 
@@ -118,7 +102,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
 </head>
 
 <body class="alt-menu sidebar-noneoverflow">
@@ -295,9 +278,7 @@
     <script src="{{ asset('/assets/bootstrap/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('/assets/plugins/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
     <script src="{{ asset('/assets/assets/js/app.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vuedraggable@next/dist/vuedraggable.umd.js"></script>
+
     <script src="{{ asset('/assets/assets/js/custom.js') }}"></script>
     <!-- END GLOBAL MANDATORY SCRIPTS -->
     <script>

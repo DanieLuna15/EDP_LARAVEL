@@ -271,7 +271,6 @@ class PtController extends Controller
 
                     $fecha = optional($venta)->created_at;
 
-
                     return [
                         'venta_id'   => optional($venta)->id,
                         'fecha'      => $fecha,
@@ -282,9 +281,9 @@ class PtController extends Controller
                         'cajas'      => $cajas,
                         'kg_bruto'   => $kg_bruto,
                         'tara'       => $taras,
-                        'kg_neto'    => round($kg_neto, 3),
-                        'precio'     => round($precio, 2),
-                        'total'      => round($total, 2),
+                        'kg_neto'    => number_format($kg_neto, 3, '.', ''),
+                        'precio'     => number_format($precio, 2, '.', ''),
+                        'total'      => number_format($total, 2, '.', ''),
                     ];
                 });
 
@@ -323,7 +322,7 @@ class PtController extends Controller
                         'cajas'     => (float) $e->cajas,
                         'kg_bruto'  => (float) $e->peso_bruto,
                         'tara'      => (float) $e->taras,
-                        'kg_neto'   => round((float) $e->peso_neto, 3),
+                        'kg_neto'   => number_format($e->peso_neto, 3, '.', ''),
                     ];
                 });
 
@@ -359,8 +358,8 @@ class PtController extends Controller
                         'cajas'     => (float) $s->cajas,
                         'kg_bruto'  => (float) $s->kgb,
                         'tara'      => (float) $s->taras,
-                        'kg_neto'   => round((float) ($s->kgn_nuevo ?? 0), 3),
-                        'merma'     => round((float) ($s->merma ?? 0), 3),
+                        'kg_neto'   => number_format((float) ($s->kgn_nuevo ?? 0), 3, '.', ''),
+                        'merma'     => number_format((float) ($s->merma ?? 0), 3, '.', ''),
                     ];
                 });
 
@@ -411,11 +410,14 @@ class PtController extends Controller
                     - ($ventas['totales_vendidos']['taras']    ?? 0)
                     - ($envios['totales_envios']['taras']      ?? 0)
                     - ($sobrantes['totales_sobrantes']['taras'] ?? 0)),
-                'kg_neto'  => round(
-                    ($ini['kg_neto'] ?? 0)
+                'kg_neto' => number_format(
+                    (($ini['kg_neto'] ?? 0)
                         - ($ventas['totales_vendidos']['kg_neto'] ?? 0)
                         - ($envios['totales_envios']['kg_neto']   ?? 0)
-                        - ($sobrantes['totales_sobrantes']['kg_neto'] ?? 0),
+                        - ($sobrantes['totales_sobrantes']['kg_neto'] ?? 0)),
+                    3,
+                    '.',
+                    ''
                 ),
             ];
 
@@ -482,13 +484,16 @@ class PtController extends Controller
                 - $ventas_resumen_global['ventas']['taras']
                 - $ventas_resumen_global['envios_transf']['taras']
                 - $ventas_resumen_global['sobrantes_pt']['taras']),
-            'kg_neto'  => round(
+            'kg_neto' => number_format(
                 $ventas_resumen_global['inicial']['kg_neto']
                     - $ventas_resumen_global['ventas']['kg_neto']
                     - $ventas_resumen_global['envios_transf']['kg_neto']
                     - $ventas_resumen_global['sobrantes_pt']['kg_neto'],
-                3
-            )
+                3,
+                '.',
+                ''
+            ),
+
         ];
 
         $pt->setAttribute('ventas_resumen_global', $ventas_resumen_global);
@@ -1232,10 +1237,11 @@ class PtController extends Controller
 
         $pt->totales_por_item_totales = [
             'cajas'      => (float) $pt->totales_por_item->sum('cajas'),
-            'peso_bruto' => round((float) $pt->totales_por_item->sum('peso_bruto'), 3),
+            'peso_bruto' => number_format((float) $pt->totales_por_item->sum('peso_bruto'), 3, '.', ''),
             'taras'      => (float) $pt->totales_por_item->sum('taras'),
-            'peso_neto'  => round((float) $pt->totales_por_item->sum('peso_neto'), 3),
+            'peso_neto'  => number_format((float) $pt->totales_por_item->sum('peso_neto'), 3, '.', ''),
         ];
+
         // Asegura tener DetallePts cargado (con sus filtros ya definidos en el modelo)
 
 
@@ -1322,9 +1328,9 @@ class PtController extends Controller
         $pollos_descomp = (float)$pt->DescomponerPts->sum('pollos');
 
         $sb_cajas = max(0, $ini_cajas - $des_cajas - $mer_cajas);
-        $sb_bruto = max(0, round($ini_bruto - $des_bruto - $mer_bruto, 3));
+        $sb_bruto = max(0, (float) number_format($ini_bruto - $des_bruto - $mer_bruto, 3, '.', ''));
         $sb_taras = max(0, $ini_tara  - $des_taras - $mer_taras);
-        $sb_neto  = max(0, round($ini_neto  - $des_neto  - $mer_neto, 3));
+        $sb_neto  = max(0, (float) number_format($ini_neto  - $des_neto  - $mer_neto, 3, '.', ''));
 
         $sb_pollos = max(0, $ini_pollos - $pollos_descomp);
 
@@ -1629,9 +1635,9 @@ class PtController extends Controller
 
         $pt->totales_por_item_totales = [
             'cajas'      => (float) $pt->totales_por_item->sum('cajas'),
-            'peso_bruto' => round((float) $pt->totales_por_item->sum('peso_bruto'), 3),
+            'peso_bruto' => (float) number_format($pt->totales_por_item->sum('peso_bruto'), 3, '.', ''),
             'taras'      => (float) $pt->totales_por_item->sum('taras'),
-            'peso_neto'  => round((float) $pt->totales_por_item->sum('peso_neto'), 3),
+            'peso_neto'  => (float) number_format($pt->totales_por_item->sum('peso_neto'), 3, '.', ''),
         ];
         // Asegura tener DetallePts cargado (con sus filtros ya definidos en el modelo)
 
@@ -1719,9 +1725,9 @@ class PtController extends Controller
         $pollos_descomp = (float)$pt->DescomponerPts->sum('pollos');
 
         $sb_cajas = max(0, $ini_cajas - $des_cajas - $mer_cajas);
-        $sb_bruto = max(0, round($ini_bruto - $des_bruto - $mer_bruto, 3));
+        $sb_bruto = max(0, (float) number_format($ini_bruto - $des_bruto - $mer_bruto, 3, '.', ''));
         $sb_taras = max(0, $ini_tara  - $des_taras - $mer_taras);
-        $sb_neto  = max(0, round($ini_neto  - $des_neto  - $mer_neto, 3));
+        $sb_neto  = max(0, (float) number_format($ini_neto  - $des_neto  - $mer_neto, 3, '.', ''));
 
         $sb_pollos = max(0, $ini_pollos - $pollos_descomp);
 
@@ -1815,9 +1821,10 @@ class PtController extends Controller
                         'cajas'      => $cajas,
                         'kg_bruto'   => $kg_bruto,
                         'tara'       => $taras,
-                        'kg_neto'    => round($kg_neto, 3),
-                        'precio'     => round($precio, 2),
-                        'total'      => round($total, 2),
+                        'kg_neto' => (float) number_format($kg_neto, 3, '.', ''),
+                        'precio'  => (float) number_format($precio, 2, '.', ''),
+                        'total'   => (float) number_format($total, 2, '.', ''),
+
                     ];
                 });
 
@@ -1856,7 +1863,7 @@ class PtController extends Controller
                         'cajas'     => (float) $e->cajas,
                         'kg_bruto'  => (float) $e->peso_bruto,
                         'tara'      => (float) $e->taras,
-                        'kg_neto'   => round((float) $e->peso_neto, 3),
+                        'kg_neto' => (float) number_format((float) $e->peso_neto, 3, '.', ''),
                     ];
                 });
 
@@ -1892,8 +1899,9 @@ class PtController extends Controller
                         'cajas'     => (float) $s->cajas,
                         'kg_bruto'  => (float) $s->kgb,
                         'tara'      => (float) $s->taras,
-                        'kg_neto'   => round((float) ($s->kgn_nuevo ?? 0), 3),
-                        'merma'     => round((float) ($s->merma ?? 0), 3),
+                        'kg_neto' => (float) number_format((float) ($s->kgn_nuevo ?? 0), 3, '.', ''),
+                        'merma'   => (float) number_format((float) ($s->merma ?? 0), 3, '.', ''),
+
                     ];
                 });
 
@@ -1944,12 +1952,16 @@ class PtController extends Controller
                     - ($ventas['totales_vendidos']['taras']    ?? 0)
                     - ($envios['totales_envios']['taras']      ?? 0)
                     - ($sobrantes['totales_sobrantes']['taras'] ?? 0)),
-                'kg_neto'  => round(
-                    ($ini['kg_neto'] ?? 0)
+                'kg_neto' => (float) number_format(
+                    (($ini['kg_neto'] ?? 0)
                         - ($ventas['totales_vendidos']['kg_neto'] ?? 0)
                         - ($envios['totales_envios']['kg_neto']   ?? 0)
-                        - ($sobrantes['totales_sobrantes']['kg_neto'] ?? 0),
+                        - ($sobrantes['totales_sobrantes']['kg_neto'] ?? 0)),
+                    3,
+                    '.',
+                    ''
                 ),
+
             ];
 
             return [
@@ -2015,13 +2027,16 @@ class PtController extends Controller
                 - $ventas_resumen_global['ventas']['taras']
                 - $ventas_resumen_global['envios_transf']['taras']
                 - $ventas_resumen_global['sobrantes_pt']['taras']),
-            'kg_neto'  => round(
+            'kg_neto' => (float) number_format(
                 $ventas_resumen_global['inicial']['kg_neto']
                     - $ventas_resumen_global['ventas']['kg_neto']
                     - $ventas_resumen_global['envios_transf']['kg_neto']
                     - $ventas_resumen_global['sobrantes_pt']['kg_neto'],
-                3
-            )
+                3,
+                '.',
+                ''
+            ),
+
         ];
 
         $pt->setAttribute('ventas_resumen_global', $ventas_resumen_global);

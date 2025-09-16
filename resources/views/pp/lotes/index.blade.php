@@ -135,7 +135,7 @@
                                                         <a :href="m.url_cronologico_pdf" target="_blank" class="dropdown-item">
                                                             PP CRONOLOGICO</a>
                                                         <a :href="m.url_reporte_general_pdf" target="_blank"
-                                                            class="dropdown-item"> PP REPORTE GENERAL</a>
+                                                            class="dropdown-item bg-light-success"> PP REPORTE GENERAL</a>
                                                         <a :href="m.url_reporte_venta_pdf" target="_blank" class="dropdown-item bg-light-success">
                                                             REP. VENTA PP</a>
                                                     </div>

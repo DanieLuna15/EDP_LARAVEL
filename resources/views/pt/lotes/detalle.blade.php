@@ -555,7 +555,7 @@
                             </div>
                             <div class="form-group col-md-12">
                                 <label for="inputEmail4">PESO NETO</label>
-                                <input type="text"  v-model="item_pt_envio.peso_neto" class="form-control" @change="calcularNeto" placeholder="Peso Neto">
+                                <input type="text"  v-model="item_pt_envio.peso_neto" class="form-control" @change="actualizarNeto" placeholder="Peso Neto">
                             </div>
                         </div>
                     </div>
@@ -1579,10 +1579,15 @@
                                 padding: '2em'
                             })
                             await this.load()
+                            this.item_pt_envio = {
+                                cajas: 0,
+                                peso_bruto: 0,
+                                peso_neto: 0
+                            }
                         }
                     })
                 } catch (error) {
-
+                    console.error(error)
                 }
 
             },

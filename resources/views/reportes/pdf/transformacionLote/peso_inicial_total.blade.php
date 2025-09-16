@@ -236,12 +236,12 @@
             <table width="100%" border="0" cellpadding="5" cellspacing="0">
                 <thead>
                     <tr>
-                        <th align="center" colspan="7" class="bold"><strong>TRASPASOS ACEPTADOS (TRANS →
-                                TRANS)</strong></th>
+                        <th align="center" colspan="7" class="bold"><strong>TRASPASOS ACEPTADOS (SUB-TRANS a
+                                SUB-TRANS)</strong></th>
                     </tr>
                     <tr class="border_top">
+                        <th class="bold" align="left">SUB-TRANS N°</th>
                         <th class="bold" align="left">FECHA/HORA</th>
-                        <th class="bold" align="left">TRANS ORIGEN N°</th>
                         <th class="bold" align="left">ITEM</th>
                         <th class="bold" align="left">USUARIO</th>
                         <th class="bold" align="left">CAJAS</th>
@@ -252,8 +252,8 @@
                 <tbody>
                     @foreach ($T['rows'] as $r)
                         <tr class="border_top">
+                            <td class="bold">{{ $r['trans_nro'] }}</td>
                             <td class="bold">{{ \Carbon\Carbon::parse($r['fecha'])->format('d/m/Y H:i:s') }}</td>
-                            <td class="bold">TRANS-{{ $r['trans_nro'] }}</td>
                             <td class="bold">{{ $r['item_name'] }}</td>
                             <td class="bold">{{ $r['usuario'] }}</td>
                             <td class="bold">{{ number_format($r['cajas']) }}</td>
@@ -334,28 +334,28 @@
                                 <th class="bold">{{ number_format($e['totales_subitem']['kg_neto'], 3) }}</th>
                             </tr>
                             <tr class="border_top descomp-head-merma">
-                                <th class="bold" colspan="2">MERMA ({{ $e['encargado'] }})</th>
-                                <th class="bold">{{ number_format($e['merma']['cajas']) }}</th>
+                                <th class="bold" colspan="5">MERMA ({{ $e['encargado'] }})</th>
+                                {{-- <th class="bold">{{ number_format($e['merma']['cajas']) }}</th>
                                 <th class="bold">{{ number_format($e['merma']['kg_bruto'], 3) }}</th>
-                                <th class="bold">{{ number_format($e['merma']['tara']) }}</th>
+                                <th class="bold">{{ number_format($e['merma']['tara']) }}</th> --}}
                                 <th class="bold">{{ number_format($e['merma']['kg_neto'], 3) }}</th>
                             </tr>
                         @endforeach
 
                         <tr class="border_top total-final">
-                            <th class="bold" colspan="2"> TOTALES SUB-DESCOMPOSICIÓN {{ $g['item_name'] }} | PT
+                            <th class="bold" colspan="5"> TOTALES SUB-DESCOMPOSICIÓN {{ $g['item_name'] }} | PT
                                 N°{{ $g['pt_nro'] }}</th>
-                            <th class="bold">{{ number_format($g['subitems_totales']['cajas']) }}</th>
+                            {{-- <th class="bold">{{ number_format($g['subitems_totales']['cajas']) }}</th>
                             <th class="bold">{{ number_format($g['subitems_totales']['kg_bruto'], 3) }}</th>
-                            <th class="bold">{{ number_format($g['subitems_totales']['tara']) }}</th>
+                            <th class="bold">{{ number_format($g['subitems_totales']['tara']) }}</th> --}}
                             <th class="bold">{{ number_format($g['subitems_totales']['kg_neto'], 3) }}</th>
                         </tr>
                         <tr class="border_top total-final-orange">
-                            <th class="bold" colspan="2">TOTALES MERMA {{ $g['item_name'] }} | PT
+                            <th class="bold" colspan="5">TOTALES MERMA {{ $g['item_name'] }} | PT
                                 N°{{ $g['pt_nro'] }}</th>
-                            <th class="bold">{{ number_format($g['merma_total']['cajas']) }}</th>
+                            {{-- <th class="bold">{{ number_format($g['merma_total']['cajas']) }}</th>
                             <th class="bold">{{ number_format($g['merma_total']['kg_bruto'], 3) }}</th>
-                            <th class="bold">{{ number_format($g['merma_total']['tara']) }}</th>
+                            <th class="bold">{{ number_format($g['merma_total']['tara']) }}</th> --}}
                             <th class="bold">{{ number_format($g['merma_total']['kg_neto'], 3) }}</th>
                         </tr>
                     @endforeach
@@ -367,8 +367,8 @@
 
 
     @php
-        $S = $trans->subdescomp_totales_por_subitem ?? collect();
-        $Ssum = $trans->subdescomp_totales_por_subitem_sum ?? [
+        $S = $trans->subitem_totales_con_traspaso ?? collect();
+        $Ssum = $trans->subitem_totales_con_traspaso_sum ?? [
             'cajas' => 0,
             'kg_bruto' => 0,
             'tara' => 0,
@@ -402,7 +402,7 @@
                             <td class="bold">{{ number_format($row['kg_neto'], 3) }}</td>
                         </tr>
                     @endforeach
-                    <tr class="border_top">
+                    <tr class="border_top total-final">
                         <th class="bold">TOTALES</th>
                         <th class="bold">{{ number_format($Ssum['cajas']) }}</th>
                         <th class="bold">{{ number_format($Ssum['kg_bruto'], 3) }}</th>
@@ -413,6 +413,74 @@
             </table>
         </div>
     @endif
+
+    @php
+        $BF = $trans->balance_final ?? null;
+    @endphp
+
+    @if ($BF)
+        <div class="tabla_borde" style="margin-top:8px;">
+            <table width="100%" border="0" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr class="border_top bold descomp-head">
+                        <th align="center" colspan="5" class="bold section-title">
+                            <strong>BALANCE FINAL SUB-TRANS N° {{ $trans->nro }}</strong>
+                        </th>
+                    </tr>
+                    <tr class="border_top">
+                        <th class="bold" align="left">DETALLE</th>
+                        <th class="bold">CAJAS</th>
+                        <th class="bold">KG/B</th>
+                        <th class="bold">TARA</th>
+                        <th class="bold">KG/N</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border_top">
+                        <th class="bold">TOTAL INICIAL</th>
+                        <td class="bold">{{ number_format($BF['inicial']['cajas']) }}</td>
+                        <td class="bold">{{ number_format($BF['inicial']['kg_bruto'], 3) }}</td>
+                        <td class="bold">{{ number_format($BF['inicial']['tara']) }}</td>
+                        <td class="bold">{{ number_format($BF['inicial']['kg_neto'], 3) }}</td>
+                    </tr>
+
+                    <tr>
+                        <th class="bold">(-) SUB-DESCOMPOSICIONES</th>
+                        <td class="bold">{{ number_format($BF['descomp']['cajas']) }}</td>
+                        <td class="bold">{{ number_format($BF['descomp']['kg_bruto'], 3) }}</td>
+                        <td class="bold">{{ number_format($BF['descomp']['tara']) }}</td>
+                        <td class="bold">{{ number_format($BF['descomp']['kg_neto'], 3) }}</td>
+                    </tr>
+
+                    <tr>
+                        <th class="bold">(-) TOTAL MERMAS SUB-DESCOMPOSICIONES</th>
+                        <td class="bold">{{ number_format($BF['merma']['cajas']) }}</td>
+                        <td class="bold">{{ number_format($BF['merma']['kg_bruto'], 3) }}</td>
+                        <td class="bold">{{ number_format($BF['merma']['tara']) }}</td>
+                        <td class="bold">{{ number_format($BF['merma']['kg_neto'], 3) }}</td>
+                    </tr>
+
+                    <tr class="border_top total-final">
+                        <th class="bold" colspan="4">SOBRANTE PARCIAL (INICIAL - SUB-DESCOMPOSICIONES - MERMAS)</th>
+                        {{-- <th class="bold">{{ number_format($BF['sobrante']['cajas']) }}</th>
+                        <th class="bold">{{ number_format($BF['sobrante']['kg_bruto'], 3) }}</th>
+                        <th class="bold">{{ number_format($BF['sobrante']['tara']) }}</th> --}}
+                        <th class="bold">{{ number_format($BF['sobrante']['kg_neto'], 3) }}</th>
+                    </tr>
+
+                    <tr class="border_top total-final-orange">
+                        <th class="bold" colspan="4">SOBRANTE FINAL GLOBAL (MERMAS + SOBRANTE PARCIAL)</th>
+                        {{-- <th class="bold">{{ number_format($BF['merma_final_global']['cajas']) }}</th>
+                        <th class="bold">{{ number_format($BF['merma_final_global']['kg_bruto'], 3) }}</th>
+                        <th class="bold">{{ number_format($BF['merma_final_global']['tara']) }}</th> --}}
+                        <th class="bold">{{ number_format($BF['merma_final_global']['kg_neto'], 3) }}</th>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+    @endif
+
 
 
 

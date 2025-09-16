@@ -298,7 +298,7 @@ class VentaController extends Controller
 
     public function venta2(Request $request)
     {
-       //dd($request->all());
+        //dd($request->all());
         try {
             $venta = DB::transaction(function () use ($request) {
 
@@ -565,6 +565,7 @@ class VentaController extends Controller
                     $ventaTransformacion->subitem_id = $d['subitem']['id'];
                     $ventaTransformacion->cajas = $d['total_cajas'];
                     $ventaTransformacion->peso_bruto = $d['total_peso_bruto'];
+                    $ventaTransformacion->taras = ($d['total_cajas'] > 0) ? $d['total_cajas'] * 2 : 0;
                     $ventaTransformacion->peso_neto = $d['total_peso_neto'];
                     $ventaTransformacion->venta = $d['subitem']['venta'] ?? 0.00;
                     $ventaTransformacion->total = $d['subitem']['venta'] * $d['total_peso_neto'];
@@ -843,7 +844,7 @@ class VentaController extends Controller
     public function destroy(Venta $venta)
     {
         $venta->estado = 0;
-        
+
         $venta->save();
         ArqueoVenta::where('venta_id', $venta->id)->update(['estado' => 0]);
 
@@ -1287,7 +1288,9 @@ class VentaController extends Controller
             $venta->increment('cobranza_print_count');
         }
         $venta->tipo_impresion = $esOriginal ? '' : '(COPIA)';
-        $venta = $this->show($venta);
+        $venta = $this->show($venta)->loadMissing([
+            'Tipopago',
+        ]);
         //dd($venta);
         $sucursal = $venta->Sucursal;
         $sucursal->file_sucursals = $sucursal->Filesucursals()->get()->each(function ($file) {

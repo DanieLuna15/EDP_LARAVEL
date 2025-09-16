@@ -17,9 +17,9 @@
                         <button data-toggle="modal" data-target="#exampleModal"
                                 @click="add=true, model.name=''"
                                 class="btn btn-success"
-                                :disabled="trans.length >= 2"
+
                                 :title="trans.length >= 2 ? 'No se puede abrir más lotes, por favor cierra los anteriores lotes' : ''">
-                            INICIAR TRANSFORMACION
+                            INICIAR SUBTRANSFORMACION
                         </button>
                     </div>
 
@@ -28,7 +28,7 @@
                         <div class="modal-dialog" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modalCrud">INICIAR TRANSFORMACION</h5>
+                                    <h5 class="modal-title" id="modalCrud">INICIAR SUBTRANSFORMACION</h5>
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -41,7 +41,7 @@
                                 <div class="modal-body">
                                     <div class="form-row mb-4">
                                         <div class="form-group col-md-12">
-                                            <label for="inputEmail4">NRO DE TRANSFORMACION</label>
+                                            <label for="inputEmail4">NRO DE SUBTRANSFORMACION</label>
                                             <input type="text" v-model="model.nro" class="form-control" placeholder="Ejm: 1">
                                         </div>
 
@@ -63,7 +63,7 @@
                             <div class="widget-content">
                                 <div class="w-content">
                                     <div class="w-info">
-                                        <h6 class="value">TRANS. N° {{ m . nro }}</h6>
+                                        <h6 class="value">SUBTRANS. N° {{ m . nro }}</h6>
                                         <p class="">{{ m . mes }}</p>
                                     </div>
 
@@ -167,11 +167,10 @@
                 methods: {
                     async Save() {
                         if (this.model.nro.trim() == '') {
-                            swal('Error', 'El nro de transformacion es obligatorio', 'error')
+                            swal('Error', 'El nro de subtransformacion es obligatorio', 'error')
                             return
                         }
                         try {
-                            block.block();
                             // let res = await axios.post(, this.model)
                             const params = new URLSearchParams(this.model);
                             this.model.sucursal_id = this.sucursal.id
@@ -187,7 +186,6 @@
 
                             }
                             dt.destroy()
-                            block.unblock();
                             await this.load()
                             dt.create()
                         } catch (e) {
@@ -205,7 +203,7 @@
                     async load() {
                         try {
                             let self = this
-
+                            block.block();
                             try {
                                 await Promise.all([self.GET_DATA("{{ url('api/tranformacion-lotes/curso/') }}/" +
                                         this.sucursal.id),
@@ -214,7 +212,7 @@
                                     self.trans = v[0]
                                     self.data = v[1]
                                 })
-
+                                block.unblock();
                             } catch (e) {
 
                             }

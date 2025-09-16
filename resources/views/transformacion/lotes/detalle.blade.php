@@ -18,7 +18,6 @@
                                                 <th><strong>Peso Neto</strong> </th>
                                             </thead>
                                             <tbody>
-
                                                 <tr class="bg-primary ">
                                                     <td class="text-white">{{ model . cajas_disponibles }}</td>
                                                     <td class="text-white">{{ model . pollos_disponibles }}</td>
@@ -56,7 +55,6 @@
                                 <div class="d-flex justify-content-between">
                                     <h4>ITEMS ENVIADOS DESDE PT</h4>
                                 </div>
-
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="statbox widget box box-shadow">
@@ -107,7 +105,6 @@
                                                             <td style="font-weight: bold">
                                                                 {{ Number(calcularTotalesEnviarItemPtTransformacion . suma_peso_neto) . toFixed(3) }}
                                                             </td>
-
                                                         </tr>
                                                     </tfoot>
                                                 </table>
@@ -118,15 +115,16 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="col-lg-12 col-12 layout-spacing" v-if="item_sobras_trans.length>0">
                         <div class="statbox widget box box-shadow ">
                             <div class="widget-content widget-content-area border-tab px-2">
                                 <div class="d-flex justify-content-between">
-                                    <h4>Sobras de Items disponibles de Transformación</h4>
+                                    <h4>Sobras de Items disponibles de SubTransformación</h4>
                                 </div>
                                 <div class="col-12" style="padding: 0px">
                                     <div class="alert alert-info">
-                                        <strong>Info! Son el saldo sobrante de un anterior lote de Transformacion.</strong>
+                                        <strong>Info! Son el saldo sobrante de un anterior lote de SubTransformacion.</strong>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -245,7 +243,7 @@
                         <div class="widget-content widget-content-area border-tab px-2 bg-light-primary">
                             <div class="alert alert-info" v-if="model.lista_subitems_transformacion.length>0">
                                 <div>
-                                    <strong>Info! ITEMS PT DISPONIBLES PARA TRANSFORMACION.</strong>
+                                    <strong>Info! ITEMS PT DISPONIBLES PARA SUBTRANSFORMACION.</strong>
                                 </div>
                             </div>
                             <div class="card" v-if="model.list_items_pt.length">
@@ -402,7 +400,7 @@
                                         </div>
                                     </div>
                                     <div class="col-12 my-2">
-                                        <button class="btn btn-success w-100" @click="agregarItem" :disabled="!item_pt_descomponer.pt || !item_pt_descomponer.item || item_pt_descomponer.peso_bruto==0 || item_pt_descomponer.peso_neto==0">AGREGAR ITEM</button>
+                                        <button class="btn btn-success w-100" @click="agregarItem" :disabled="!item_pt_descomponer.pt || !item_pt_descomponer.item || item_pt_descomponer.peso_neto==0">AGREGAR ITEM</button>
                                     </div>
                                     <div class="col-12 ">
                                         <table class="table table-bordered text-center">
@@ -473,13 +471,19 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="col-lg-12 col-12">
+                        <div class="alert alert-info" v-if="list_items_pt.length>0">
+                            <div>
+                                <strong>Info!</strong> En este apartado se declara el trozado de las subtransformaciones realizadas y disponibles para la venta.
+                            </div>
+                        </div>
                         <template v-for="m in list_items_pt">
                             <p class="mt-4"> <strong> PT-{{ m . pt . nro }} - {{ m . item . name }}</strong> </p>
                             <div class="card">
                                 <div class="card-body p-0">
                                     <div class="row m-0">
-                                        <div class="col-8 p-0">
+                                        <div class="col-7 p-0">
                                             <table class="table table-bordered table-responsive">
                                                 <thead>
                                                     <th>N°</th>
@@ -512,7 +516,7 @@
                                                             </td>
                                                             <td>
                                                                 <input type="text" class="form-control"
-                                                                    :value="Number(item.peso_neto).toFixed(3)" disabled>
+                                                                    :value="Number(item.peso_neto).toFixed(3)" disabled >
                                                             </td>
                                                             <td>
                                                                 <input type="text" class="form-control"
@@ -542,9 +546,10 @@
                                                 </tfoot>
                                             </table>
                                         </div>
-                                        <div class="col-4 p-0">
+                                        <div class="col-5 p-0">
                                             <table class="table table-bordered table-responsive">
                                                 <thead>
+                                                    <th>ENCARGADO</th>
                                                     <th>ITEM SUB PT</th>
                                                     <th>PESO BT TRANS</th>
                                                     <th>CAJAS</th>
@@ -554,8 +559,11 @@
                                                 <tbody>
                                                     <tr v-for="(sub_item,i) in m.lista_trozados">
                                                         <td>
+                                                            <span>{{ sub_item.encargado }}</span>
+                                                        </td>
+                                                        <td>
                                                             <select name="" class="form-control" id=""
-                                                                v-model="sub_item.sub_item">
+                                                                v-model="sub_item.sub_item" style="width:150px">
                                                                 <template v-for="s_item in items_sucursals">
                                                                     <option v-if="s_item.tipo==3 || (s_item.tipo == 2 && s_item.name == 'MALTRATO')" :value="s_item">
                                                                         {{ s_item . name }}
@@ -563,7 +571,6 @@
                                                                 </template>
                                                             </select>
                                                         </td>
-
                                                         <td>
                                                             <input type="text" class="form-control"
                                                                     v-model.number="sub_item.pb_trans"
@@ -588,12 +595,9 @@
                                                             </button>
                                                         </td>
                                                     </tr>
-
                                                 </tbody>
                                                 <tfoot>
-
                                                 </tfoot>
-
                                             </table>
                                             <div class="w-100 p-2">
                                                <button v-if="m.lista_trozados.length"
@@ -627,6 +631,7 @@
                                                 <th class="text-center">SUB ITEM</th>
                                                 <th class="text-center">CAJAS</th>
                                                 <th class="text-center">PESO BRUTO</th>
+                                                <th class="text-center">TARAS</th>
                                                 <th class="text-center">PESO NETO</th>
                                                 <th class="text-center">PESO NETO NUEVO</th>
                                                 <th class="text-center">MERMA</th>
@@ -634,15 +639,19 @@
                                             <tbody>
                                                 <template v-for="m in model.lista_subitems_transformacion">
                                                     <tr>
-                                                        <td class="text-primary" style="display: none">PT-{{ m . pt . nro }}
+                                                        <td class="text-primary text-center" style="display: none">PT-{{ m . pt . nro }}
                                                         </td>
-                                                        <td class="text-primary">{{ m . subitem . name }}</td>
+                                                        <td><strong>{{ m . subitem . name }}</strong></td>
                                                         <td class="text-primary">
                                                             <input type="text" :value="Number(m.total_cajas).toFixed(3)"
                                                                 class="form-control" readonly>
                                                         </td>
                                                         <td class="text-primary">
                                                             <input type="text" :value="Number(m.total_peso_bruto).toFixed(3)"
+                                                                class="form-control" readonly>
+                                                        </td>
+                                                        <td class="text-primary">
+                                                            <input type="text" :value="Number(m.total_taras).toFixed(3)"
                                                                 class="form-control" readonly>
                                                         </td>
                                                         <td class="text-primary">
@@ -1384,6 +1393,10 @@
                         sub.item = {
                             ...item
                         }
+                        sub.encargado = item.encargado
+                            || (item.user && item.user.nombre)
+                            || this.user.nombre
+                            || '';
                         sub.cajas_trans = 0
                         sub.pb_trans = 0
                         sub.pn_trans = 0
@@ -1529,10 +1542,10 @@
 
                     ChangePesoBruto() {
                         let peso_bruto = Number(Number(this.item_pt_des.peso_bruto).toFixed(3));
-                        if (peso_bruto > Number(this.item_pt_descomponer.peso_bruto)) {
-                            swal("Error", "No puedes descomponer más peso de los disponibles.", "warning");
-                            this.item_pt_des.peso_bruto = Number(this.item_pt_descomponer.peso_bruto).toFixed(3);
-                        }
+                        // if (peso_bruto > Number(this.item_pt_descomponer.peso_bruto)) {
+                        //     swal("Error", "No puedes descomponer más peso de los disponibles.", "warning");
+                        //     this.item_pt_des.peso_bruto = Number(this.item_pt_descomponer.peso_bruto).toFixed(3);
+                        // }
                     },
 
                     ChangePesoNeto() {
