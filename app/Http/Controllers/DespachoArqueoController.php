@@ -34,6 +34,7 @@ class DespachoArqueoController extends Controller
     public function store(Request $request)
     {
         $venta = Venta::find($request->venta['id']);
+        
         if (!$venta) {
             return response()->json(['error' => 'Venta no encontrada.'], 404);
         }

@@ -154,10 +154,12 @@
 
     <div class="line"></div>
 
-    @if (in_array($venta->metodo_pago, [2, 3]))
+    @if (in_array($venta->metodo_pago, [2, 3, 4]))
         <table class="cliente-info">
             <tr>
-                <td><strong>Detalles de Crédito:</strong></td>
+                <td><strong>Detalles de {{ optional($venta->Tipopago)->name
+                            ?? optional(optional($venta->Cliente)->Tipopago)->name
+                            ?? '—' }}:</strong></td>
                 <td> <strong>Forma de Pago: </strong>{{ $arqueoVenta->formapago->name }}</td>
             </tr>
         </table>
@@ -178,7 +180,9 @@
     @elseif($venta->metodo_pago == 1)
         <table class="cliente-info">
             <tr>
-                <td><strong>Detalles al Contado:</strong></td>
+                <td><strong>Detalles al {{ optional($venta->Tipopago)->name
+                            ?? optional(optional($venta->Cliente)->Tipopago)->name
+                            ?? '—' }}:</strong></td>
                 <td> <strong>Forma de Pago: </strong>{{ $arqueoVenta->formapago->name }}</td>
             </tr>
         </table>

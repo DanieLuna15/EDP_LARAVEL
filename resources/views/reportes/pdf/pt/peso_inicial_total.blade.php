@@ -535,7 +535,7 @@
                     <td class="bold"><?= number_format($R['merma']['tara'] ?? 0) ?></td>
                     <td class="bold"><?= number_format($R['merma']['peso_neto'] ?? 0, 3) ?></td>
                 </tr>
-                <tr class="border_top">
+                <tr class="border_top total-final">
                     <th class="bold">SOBRANTE FINAL</th>
                     <th class="bold"><?= number_format($R['sobrante']['pollos'] ?? 0) ?></th>
                     <th class="bold"><?= number_format($R['sobrante']['cajas'] ?? 0) ?></th>

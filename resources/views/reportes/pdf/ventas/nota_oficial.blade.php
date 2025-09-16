@@ -135,14 +135,10 @@
 
                     </td>
                     <td width="33%" height="0" align="center">
-                        <strong>METODO PAGO:</strong>
-                            @if($venta->metodo_pago == 1)
-                                CONTADO
-                            @elseif($venta->metodo_pago == 2)
-                                CREDITO
-                            @else
-                                CREDITO ENTREGA
-                            @endif
+                        <strong>MÉTODO PAGO:</strong>
+                        {{ optional($venta->Tipopago)->name
+                            ?? optional(optional($venta->Cliente)->Tipopago)->name
+                            ?? '—' }}
                     </td>
                 </tr>
                 <tr>
@@ -216,7 +212,7 @@
                     ?>
                                 <tr>
 
-                                    <td align="left" class="bold border-th border_top">TR-{{ $de->subitem_id }}</td>
+                                    <td align="left" class="bold border-th border_top">SUBTR-{{ $de->subitem_id }}</td>
                                     <td align="left" class="bold border-th border_top">
                                         {{ $de->Subitem->name }}</td>
                                     <td align="left" class="bold border-th border_top">

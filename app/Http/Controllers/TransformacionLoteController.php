@@ -119,20 +119,6 @@ class TransformacionLoteController extends Controller
      */
 
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\TransformacionLote  $transformacionLote
-     * @return \Illuminate\Http\Response
-     */
-    public function show(TransformacionLote $transformacionLote)
-    {
-        $transformacionLote = $this->detalles($transformacionLote);
-        $this->hydrateInicialTransformacion($transformacionLote);
-        $this->hydrateSubDescomp($transformacionLote);
-        $this->hydrateTraspasosAceptadosDesdeTrans($transformacionLote);
-        return $transformacionLote;
-    }
 
     /**
      * Update the specified resource in storage.
@@ -193,6 +179,7 @@ class TransformacionLoteController extends Controller
 
                 $sum_cajas      = (int) $coleccion->sum('cajas');
                 $sum_peso_bruto = (float) $coleccion->sum('peso_bruto');
+                $sum_taras = (int) $coleccion->sum('taras');
                 $sum_peso_neto  = (float) $coleccion->sum('peso_neto');
 
                 $venta_transformacion = VentaTransformacion::where('transformacion_id', $transformacionLote->id)
@@ -202,19 +189,23 @@ class TransformacionLoteController extends Controller
 
                 $cajas_vendidas = (int) $venta_transformacion->sum('cajas');
                 $peso_vendido   = (float) $venta_transformacion->sum('peso_bruto');
+                $taras_vendidas = (int) $venta_transformacion->sum('taras');
                 $peso_neto_vendido   = (float) $venta_transformacion->sum('peso_neto');
 
                 $cajas_total = max(0, $sum_cajas - $cajas_vendidas);
                 $peso_total  = max(0.0, $sum_peso_bruto - $peso_vendido);
+                $taras_total = max(0, $sum_taras - $taras_vendidas);
                 $peso_neto_total  = max(0.0, $sum_peso_neto - $peso_neto_vendido);
+
 
                 if ($peso_neto_total > 0) {
                     $list_subitems_lista[] = [
                         "pt"               => $pt,
                         "subitem"          => $sub,
                         "total_cajas"      => $cajas_total,
-                        "total_peso_bruto" => round($peso_total, 3),
-                        "total_peso_neto"  => round($peso_neto_total, 3),
+                        "total_peso_bruto" => (float) number_format($peso_total, 3, '.', ''),
+                        "total_taras"      => $taras_total,
+                        "total_peso_neto"  => (float) number_format($peso_neto_total, 3, '.', ''),
                     ];
                 }
             }
@@ -259,6 +250,7 @@ class TransformacionLoteController extends Controller
                     'cajas'      => (int)   $rows->sum('cajas'),
                     'peso_bruto' => (float) $rows->sum('peso_bruto'),
                     'peso_neto'  => (float) $rows->sum('peso_neto'),
+                    'taras'      => (int)   $rows->sum('taras'),
                 ];
             });
 
@@ -272,10 +264,10 @@ class TransformacionLoteController extends Controller
                 $peso_bruto_e = sprintf("%.3f", $entregados->sum('peso_bruto'));
                 $peso_neto_e = sprintf("%.3f", $entregados->sum('peso_neto'));
                 $taras_e = $entregados->sum('taras');
-                $cajas = $item->sum('cajas') - $cajas_e;
-                $taras = $item->sum('tara') - $taras_e;
-                $peso_bruto = $item->sum('peso_bruto') - $peso_bruto_e;
-                $peso_neto = $item->sum('peso_neto') - $peso_neto_e;
+                $cajas = max(0, $item->sum('cajas') - $cajas_e);
+                $taras = max(0, $item->sum('tara') - $taras_e);
+                $peso_bruto = max(0.000, $item->sum('peso_bruto') - $peso_bruto_e);
+                $peso_neto = max(0.000, $item->sum('peso_neto') - $peso_neto_e);
 
                 //if ($peso_neto > 0) {
                 $list_items_pt[] = [
@@ -293,8 +285,10 @@ class TransformacionLoteController extends Controller
                         ->each(function ($q) use ($declaradosByEntregado) {
                             $d = $declaradosByEntregado->get($q->id);
                             $q->cajas      = max(0,   (int)   $q->cajas      - (int)   optional($d)->cajas);
-                            $q->peso_bruto = round(max(0.000, (float) $q->peso_bruto - (float) optional($d)->peso_bruto), 3);
-                            $q->peso_neto  = round(max(0.000, (float) $q->peso_neto  - (float) optional($d)->peso_neto), 3);
+                            $q->peso_bruto = (float) number_format(max(0.000, (float) $q->peso_bruto - (float) optional($d)->peso_bruto), 3, '.', '');
+                            $q->taras      = (float) number_format(max(0.000, (float) $q->taras - (float) optional($d)->taras), 3, '.', '');
+                            $q->peso_neto  = (float) number_format(max(0.000, (float) $q->peso_neto - (float) optional($d)->peso_neto), 3, '.', '');
+
                             $q->fecha = Carbon::parse($q->created_at)->format('d/m/Y H:i:s');
                         }),
                     "is_declarado" => $transformacionLote->ItemPtTransformacionLotes()->where('pt_id', $pt->id)->where('item_id', $i->id)->where('is_declarado', 1)->get(),
@@ -571,25 +565,23 @@ class TransformacionLoteController extends Controller
         return Excel::download($transformacionLote2, "TRANSFORMACION LOTE-{$transformacionLote->id}-{$transformacionLote->fecha}-{$transformacionLote->sucursal->nombre}.xlsx");
     }
 
-    public function PesoInicialTotalTrans(TransformacionLote $transformacionLote)
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\TransformacionLote  $transformacionLote
+     * @return \Illuminate\Http\Response
+     */
+    public function show(TransformacionLote $transformacionLote)
     {
-        $transformacionLote = $this->show($transformacionLote);
-
-        $sucursal = $transformacionLote->Sucursal;
-        $sucursal->file_sucursals = $sucursal->Filesucursals()->get()->each(function ($file) {
-            $file->path_url = url($file->File->path);
-        });
-        $sucursal->image = $sucursal->file_sucursals->first();
-
-        $pdf = Pdf::loadView('reportes.pdf.transformacionLote.peso_inicial_total', [
-            'trans'    => $transformacionLote,
-            'sucursal' => $sucursal
-        ])->setPaper('a4', 'landscape')->setOption('enable_php', true);
-
-        return $pdf->stream();
+        $transformacionLote = $this->detalles($transformacionLote);
+        $this->hydrateInicialTransformacion($transformacionLote);
+        $this->hydrateSubDescomp($transformacionLote);
+        $this->hydrateTraspasosAceptadosDesdeTrans($transformacionLote);
+        $this->hydrateTotalesSubitemConTraspaso($transformacionLote);
+        $this->hydrateBalanceFinal($transformacionLote);
+        return $transformacionLote;
     }
-
-
 
     protected function hydrateInicialTransformacion(TransformacionLote $t): void
     {
@@ -731,26 +723,20 @@ class TransformacionLoteController extends Controller
         ];
     }
 
-
-
     protected function hydrateSubDescomp(TransformacionLote $t): void
     {
-        // Cargamos entregas por encargado (base para subdescomposición) y sus subitems
         $t->loadMissing([
             'ItemPtTransformacionLotes.Item',
             'ItemPtTransformacionLotes.Pt',
             'ItemPtTransformacionLotes.SubItemPtTransformacionLotes.SubItem',
         ]);
 
-        $entregas = $t->ItemPtTransformacionLotes; // cada fila: (pt_id, item_id, encargado, cajas, peso_bruto, peso_neto, taras, ...)
-
-        // Agrupar por (pt_id, item_id)
+        $entregas = $t->ItemPtTransformacionLotes;
         $gruposPtItem = $entregas
             ->groupBy(fn($r) => ($r->pt_id ?? '0') . '-' . ($r->item_id ?? '0'))
             ->map(function ($grp) {
                 $first = $grp->first();
 
-                // Totales entregados para este (PT, ITEM)
                 $tot_ent = [
                     'cajas'    => (int)   $grp->sum('cajas'),
                     'kg_bruto' => (float) $grp->sum('peso_bruto'),
@@ -766,7 +752,6 @@ class TransformacionLoteController extends Controller
                     $ent_tara     = (float) $rows->sum('taras');
                     $ent_neto     = (float) $rows->sum('peso_neto');
 
-                    // Subitems declarados por este encargado (sobre sus filas)
                     $subs = $rows
                         ->flatMap(fn($r) => $r->SubItemPtTransformacionLotes)
                         ->groupBy('subitem_id')
@@ -783,7 +768,7 @@ class TransformacionLoteController extends Controller
                             ];
                         })
                         ->values()
-                        ->sortBy(fn($x) => mb_strtolower($x['subitem'] ?? ''))
+                        ->sortBy('fecha')
                         ->values();
 
                     $tot_subs = [
@@ -901,74 +886,368 @@ class TransformacionLoteController extends Controller
         ];
     }
 
-
-
-
-protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): void
-{
-    // Trae SOLO los traspasos aceptados cuyo destino es esta TRANS
-    $tras = ItemSobraTrans::with([
+    protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): void
+    {
+        $tras = ItemSobraTrans::with([
             'Item:id,name',
-            'TransformacionLote:id,nro', // TRANS origen (si tu relación apunta a la primaria)
-            'User:id,nombre',            // si existe la relación en tu modelo
+            'TransformacionLote:id,nro',
+            'User:id,nombre',
         ])
-        ->where('trans_secundario_id', $t->id)
-        ->where('aceptado', 1)
-        ->orderBy('updated_at')
-        ->orderBy('created_at')
-        ->get();
+            ->where('trans_secundario_id', $t->id)
+            ->where('aceptado', 1)
+            ->orderBy('updated_at')
+            ->orderBy('created_at')
+            ->get();
 
-    // Normaliza filas para el blade
-    $rows = $tras->map(function ($r) {
-        // tara: usa campo guardado si lo tienes; si no, calcula kgb - kgn_nuevo
-        $tara = (float) ($r->taras ?? max(0, (float)$r->kgb - (float)$r->kgn_nuevo));
-
-        return [
-            'fecha'      => $r->updated_at ?? $r->created_at,
-            'trans_nro'  => optional($r->TransformacionLote)->nro,   // TRANS origen
-            'item_name'  => optional($r->Item)->name,
-            'usuario'    => $r->user_nombre
-                             ?? optional($r->User)->nombre
-                             ?? '-',                                   // por si no hay relación
-            'cajas'      => (int)   $r->cajas,
-            'kg_bruto'   => (float) $r->kgb,
-            'tara'       => (float) $tara,
-            'kg_neto'    => (float) $r->kgn_nuevo,
-        ];
-    });
-
-    $t->traspasos_trans_aceptados = [
-        'rows' => $rows,
-        'totales' => [
-            'cajas'    => (int)   $rows->sum('cajas'),
-            'kg_bruto' => (float) $rows->sum('kg_bruto'),
-            'tara'     => (float) $rows->sum('tara'),
-            'kg_neto'  => (float) $rows->sum('kg_neto'),
-        ],
-    ];
-
-    // (Opcional) Totales agrupados por ITEM
-    $t->traspasos_trans_aceptados_por_item = $rows
-        ->groupBy('item_name')
-        ->map(function ($g, $itemName) {
+        $rows = $tras->map(function ($r) {
+            $tara = (float) ($r->taras ?? max(0, (float)$r->kgb - (float)$r->kgn_nuevo));
             return [
-                'item_name' => $itemName,
-                'cajas'     => (int)   $g->sum('cajas'),
-                'kg_bruto'  => (float) $g->sum('kg_bruto'),
-                'tara'      => (float) $g->sum('tara'),
-                'kg_neto'   => (float) $g->sum('kg_neto'),
+                'fecha'       => $r->updated_at ?? $r->created_at,
+                'trans_nro'   => optional($r->TransformacionLote)->nro,
+                'item_name'   => optional($r->Item)->name,
+                'usuario'     => $r->user_nombre ?? optional($r->User)->nombre ?? '-',
+                'cajas'       => (int)   $r->cajas,
+                'kg_bruto'    => (float) $r->kgb,
+                'tara'        => (float) $tara,
+                'kg_neto'     => (float) $r->kgn_nuevo,
+
+                'subitem_id'  => (int) $r->item_id,
+                'subitem'     => optional($r->Item)->name,
+            ];
+        });
+
+        $t->traspasos_trans_aceptados = [
+            'rows' => $rows,
+            'totales' => [
+                'cajas'    => (int)   $rows->sum('cajas'),
+                'kg_bruto' => (float) $rows->sum('kg_bruto'),
+                'tara'     => (float) $rows->sum('tara'),
+                'kg_neto'  => (float) $rows->sum('kg_neto'),
+            ],
+        ];
+
+        $t->traspasos_totales_por_subitem = $rows
+            ->groupBy('subitem_id')
+            ->map(function ($g) {
+                $f = $g->first();
+                return [
+                    'subitem_id' => $f['subitem_id'],
+                    'subitem'    => $f['subitem'],
+                    'cajas'      => (int)   $g->sum('cajas'),
+                    'kg_bruto'   => (float) $g->sum('kg_bruto'),
+                    'tara'       => (float) $g->sum('tara'),
+                    'kg_neto'    => (float) $g->sum('kg_neto'),
+                ];
+            })
+            ->values()
+            ->sortBy(fn($x) => mb_strtolower($x['subitem'] ?? ''))
+            ->values();
+    }
+
+    protected function hydrateTotalesSubitemConTraspaso(TransformacionLote $t): void
+    {
+        $subdesc = collect($t->subdescomp_totales_por_subitem ?? []);
+        $traspas = collect($t->traspasos_totales_por_subitem ?? []);
+        $idx = $subdesc->keyBy('subitem_id');
+        foreach ($traspas as $tr) {
+            if ($idx->has($tr['subitem_id'])) {
+                $row = $idx->get($tr['subitem_id']);
+                $row['cajas']    += $tr['cajas'];
+                $row['kg_bruto'] += $tr['kg_bruto'];
+                $row['tara']     += $tr['tara'];
+                $row['kg_neto']  += $tr['kg_neto'];
+                $idx->put($tr['subitem_id'], $row);
+            } else {
+                $idx->put($tr['subitem_id'], $tr);
+            }
+        }
+        $comb = $idx->values()->sortBy(fn($x) => mb_strtolower($x['subitem'] ?? ''))->values();
+        $t->subitem_totales_con_traspaso = $comb;
+        $t->subitem_totales_con_traspaso_sum = [
+            'cajas'    => (int)   $comb->sum('cajas'),
+            'kg_bruto' => (float) $comb->sum('kg_bruto'),
+            'tara'     => (float) $comb->sum('tara'),
+            'kg_neto'  => (float) $comb->sum('kg_neto'),
+        ];
+    }
+
+    protected function hydrateBalanceFinal(TransformacionLote $t): void
+    {
+        $ini = (array) ($t->inicial_listado_aceptados['totales'] ?? [
+            'cajas' => 0,
+            'kg_bruto' => 0.0,
+            'tara' => 0.0,
+            'kg_neto' => 0.0,
+        ]);
+
+        $des = (array) ($t->subdescomp_resumen_global['subitems'] ?? [
+            'cajas' => 0,
+            'kg_bruto' => 0.0,
+            'tara' => 0.0,
+            'kg_neto' => 0.0,
+        ]);
+
+        $mer = (array) ($t->subdescomp_resumen_global['merma'] ?? [
+            'cajas' => 0,
+            'kg_bruto' => 0.0,
+            'tara' => 0.0,
+            'kg_neto' => 0.0,
+        ]);
+
+        $sob = [
+            'cajas'    => max(0,   (int)($ini['cajas'] - $des['cajas'] - $mer['cajas'])),
+            'kg_bruto' => max(0.0, (float)$ini['kg_bruto'] - (float)$des['kg_bruto'] - (float)$mer['kg_bruto']),
+            'tara'     => max(0.0, (float)$ini['tara'] - (float)$des['tara']     - (float)$mer['tara']),
+            'kg_neto'  => max(0.0, (float)$ini['kg_neto'] - (float)$des['kg_neto']  - (float)$mer['kg_neto']),
+        ];
+
+        $mermaFinalGlobal = [
+            'cajas'    => (int)   ($mer['cajas']    + $sob['cajas']),
+            'kg_bruto' => (float) ($mer['kg_bruto'] + $sob['kg_bruto']),
+            'tara'     => (float) ($mer['tara']     + $sob['tara']),
+            'kg_neto'  => (float) ($mer['kg_neto']  + $sob['kg_neto']),
+        ];
+
+        $cuadre = [
+            'cajas'    => (int)   ($ini['cajas']    - $des['cajas']    - $mermaFinalGlobal['cajas']),
+            'kg_bruto' => (float) ($ini['kg_bruto'] - $des['kg_bruto'] - $mermaFinalGlobal['kg_bruto']),
+            'tara'     => (float) ($ini['tara']     - $des['tara']     - $mermaFinalGlobal['tara']),
+            'kg_neto'  => (float) ($ini['kg_neto']  - $des['kg_neto']  - $mermaFinalGlobal['kg_neto']),
+        ];
+
+        $t->balance_final = [
+            'inicial'             => $ini,
+            'descomp'             => $des,
+            'merma'               => $mer,
+            'sobrante'            => $sob,
+            'merma_final_global'  => $mermaFinalGlobal,
+            'cuadre'              => $cuadre,
+        ];
+    }
+
+    public function showTransReporteVenta(TransformacionLote $t)
+    {
+        $t = $this->detalles($t);
+        $this->hydrateInicialTransformacion($t);
+        $this->hydrateSubDescomp($t);
+        $this->hydrateTraspasosAceptadosDesdeTrans($t);
+        $this->hydrateTotalesSubitemConTraspaso($t);
+
+        $t->loadMissing([
+            'VentaTransformacions.Subitem',
+            'VentaTransformacions.Venta.User',
+            'VentaTransformacions.Venta.Cliente',
+        ]);
+
+        $sobrantesOrigen = ItemSobraTrans::with(['Item', 'User'])
+            ->where('trans_id', $t->id)
+            ->orderBy('fecha')
+            ->orderBy('hora')
+            ->get();
+
+        $inicialIdx = collect($t->subitem_totales_con_traspaso ?? [])->keyBy('subitem_id');
+
+        // ========== 2) VENTAS AGRUPADAS POR SUBITEM ==========
+        $ventas = $t->VentaTransformacions;
+
+        $ventas_por_subitem = collect($ventas)
+            ->groupBy('subitem_id')
+            ->map(function ($grp) {
+                $rows = $grp->sortBy(fn($v) => optional($v->Venta)->created_at)->values()->map(function ($v) {
+                    $venta  = $v->Venta;
+                    $fecha  = optional($venta)->created_at;
+
+                    $cajas    = (float) ($v->cajas       ?? 0);
+                    $kg_bruto = (float) ($v->peso_bruto  ?? 0);
+                    $taras    = (float) ($v->taras       ?? 0);
+                    $kg_neto  = (float) ($v->peso_neto   ?? 0);
+                    $precio   = (float) ($v->venta      ?? 0);
+                    $total    = (float) ($v->total       ?? ($kg_neto * $precio));
+
+                    return [
+                        'venta_id'   => optional($venta)->id,
+                        'fecha'      => $fecha,
+                        'usuario'    => optional(optional($venta)->User)->nombre,
+                        'cliente'    => optional(optional($venta)->Cliente)->nombre,
+                        'cliente_id' => optional(optional($venta)->Cliente)->id,
+                        'cajas'      => $cajas,
+                        'kg_bruto'   => $kg_bruto,
+                        'tara'       => $taras,
+                        'kg_neto'    => number_format($kg_neto, 3, '.', ''),
+                        'precio'     => number_format($precio, 2, '.', ''),
+                        'total'      => number_format($total, 2, '.', ''),
+                    ];
+                });
+
+                $tot = [
+                    'cajas'    => (float) $rows->sum('cajas'),
+                    'kg_bruto' => (float) $rows->sum('kg_bruto'),
+                    'taras'    => (float) $rows->sum('tara'),
+                    'kg_neto'  => (float) $rows->sum('kg_neto'),
+                    'total'    => (float) $rows->sum('total'),
+                ];
+
+                $first = $grp->first();
+
+                return [
+                    'subitem_id'       => $first->subitem_id,
+                    'subitem_name'     => optional($first->Subitem)->name,
+                    'totales_vendidos' => $tot,
+                    'rows'             => $rows,
+                ];
+            });
+
+        // ========== 3) ENVÍOS A SIGUIENTE SUBTRANS (SOBRANTES DEL TRANS ACTUAL) AGRUPADOS ==========
+        $envios_por_subitem = collect($sobrantesOrigen)
+            ->groupBy('item_id')
+            ->map(function ($grp, $subitem_id) {
+                $rows = $grp->sortBy(fn($s) => ($s->fecha ?? '') . ' ' . ($s->hora ?? ''))->values()->map(function ($s) {
+                    $fechaHora = trim(($s->fecha ?? '') . ' ' . ($s->hora ?? ''));
+                    return [
+                        'sobra_id'  => $s->id,
+                        'fecha'     => $fechaHora ?: null,
+                        'usuario'   => optional($s->User)->nombre,
+                        'detalle'   => 'Sobrante (envío a siguiente SubTrans)',
+                        'cajas'     => (float) $s->cajas,
+                        'kg_bruto'  => (float) $s->kgb,
+                        'tara'      => (float) $s->taras,
+                        'kg_neto'   => number_format((float) ($s->kgn_nuevo ?? 0), 3, '.', ''),
+                    ];
+                });
+
+                $tot = [
+                    'cajas'    => (float) $rows->sum('cajas'),
+                    'kg_bruto' => (float) $rows->sum('kg_bruto'),
+                    'taras'    => (float) $rows->sum('tara'),
+                    'kg_neto'  => (float) $rows->sum('kg_neto'),
+                ];
+
+                $first = $grp->first();
+
+                return [
+                    'subitem_id'         => (int) $subitem_id,
+                    'subitem_name'       => optional($first->Item)->name,
+                    'totales_envios_sig' => $tot,
+                    'rows'               => $rows,
+                ];
+            });
+
+        // ========== 4) MEZCLAR: INICIAL + VENTAS + ENVÍOS_SIG y calcular SALDO ==========
+        $all_subitem_ids = collect(array_unique(array_merge(
+            $inicialIdx->keys()->all(),
+            $ventas_por_subitem->keys()->all(),
+            $envios_por_subitem->keys()->all()
+        )));
+
+        $bloques = $all_subitem_ids->map(function ($sid) use ($inicialIdx, $ventas_por_subitem, $envios_por_subitem) {
+            $ini     = (array) $inicialIdx->get($sid, ['subitem_id' => $sid, 'subitem' => null, 'cajas' => 0, 'kg_bruto' => 0, 'tara' => 0, 'kg_neto' => 0]);
+            $ventas  = (array) $ventas_por_subitem->get($sid, ['subitem_id' => $sid, 'subitem_name' => null, 'totales_vendidos' => ['cajas' => 0, 'kg_bruto' => 0, 'taras' => 0, 'kg_neto' => 0, 'total' => 0], 'rows' => collect()]);
+            $envios  = (array) $envios_por_subitem->get($sid, ['subitem_id' => $sid, 'subitem_name' => null, 'totales_envios_sig' => ['cajas' => 0, 'kg_bruto' => 0, 'taras' => 0, 'kg_neto' => 0], 'rows' => collect()]);
+
+            $subitem_name = $ini['subitem'] ?? ($ventas['subitem_name'] ?? $envios['subitem_name']);
+
+            $saldo = [
+                'cajas'    => max(0, ($ini['cajas'] ?? 0)
+                    - ($ventas['totales_vendidos']['cajas']    ?? 0)
+                    - ($envios['totales_envios_sig']['cajas']  ?? 0)),
+                'kg_bruto' => max(0, ($ini['kg_bruto'] ?? 0)
+                    - ($ventas['totales_vendidos']['kg_bruto'] ?? 0)
+                    - ($envios['totales_envios_sig']['kg_bruto'] ?? 0)),
+                'tara'     => max(0, ($ini['tara'] ?? 0)
+                    - ($ventas['totales_vendidos']['taras']    ?? 0)
+                    - ($envios['totales_envios_sig']['taras']  ?? 0)),
+                'kg_neto'  => number_format(
+                    (($ini['kg_neto'] ?? 0)
+                        - ($ventas['totales_vendidos']['kg_neto'] ?? 0)
+                        - ($envios['totales_envios_sig']['kg_neto'] ?? 0)),
+                    3,
+                    '.',
+                    ''
+                ),
+            ];
+
+            return [
+                'subitem_id'               => $sid,
+                'subitem_name'             => $subitem_name,
+                'inicial'                  => [
+                    'cajas'    => (float) ($ini['cajas']    ?? 0),
+                    'kg_bruto' => (float) ($ini['kg_bruto'] ?? 0),
+                    'taras'    => (float) ($ini['tara']     ?? 0),
+                    'kg_neto'  => (float) ($ini['kg_neto']  ?? 0),
+                ],
+                'ventas'                   => $ventas['rows'],
+                'totales_ventas'           => $ventas['totales_vendidos'],
+                'envios_sgte_trans'        => $envios['rows'],
+                'totales_envios_sgte_trans' => $envios['totales_envios_sig'],
+                'saldo'                    => $saldo,
             ];
         })
-        ->values()
-        ->sortBy(fn($x) => mb_strtolower($x['item_name'] ?? ''))
-        ->values();
-}
+            ->sortBy(fn($b) => mb_strtolower($b['subitem_name'] ?? ''))
+            ->values();
 
+        $t->ventas_por_subitem_bloques = $bloques;
 
+        // ========== 5) RESUMEN GLOBAL ==========
+        $resumen = [
+            'inicial' => [
+                'cajas'    => (float) $bloques->sum(fn($b) => $b['inicial']['cajas']),
+                'kg_bruto' => (float) $bloques->sum(fn($b) => $b['inicial']['kg_bruto']),
+                'taras'    => (float) $bloques->sum(fn($b) => $b['inicial']['taras']),
+                'kg_neto'  => (float) $bloques->sum(fn($b) => $b['inicial']['kg_neto']),
+            ],
+            'ventas' => [
+                'cajas'    => (float) $bloques->sum(fn($b) => $b['totales_ventas']['cajas']),
+                'kg_bruto' => (float) $bloques->sum(fn($b) => $b['totales_ventas']['kg_bruto']),
+                'taras'    => (float) $bloques->sum(fn($b) => $b['totales_ventas']['taras']),
+                'kg_neto'  => (float) $bloques->sum(fn($b) => $b['totales_ventas']['kg_neto']),
+                'total'    => (float) $bloques->sum(fn($b) => $b['totales_ventas']['total']),
+            ],
+            'envios_sgte_trans' => [
+                'cajas'    => (float) $bloques->sum(fn($b) => $b['totales_envios_sgte_trans']['cajas']    ?? 0),
+                'kg_bruto' => (float) $bloques->sum(fn($b) => $b['totales_envios_sgte_trans']['kg_bruto'] ?? 0),
+                'taras'    => (float) $bloques->sum(fn($b) => $b['totales_envios_sgte_trans']['taras']    ?? 0),
+                'kg_neto'  => (float) $bloques->sum(fn($b) => $b['totales_envios_sgte_trans']['kg_neto']  ?? 0),
+            ],
+        ];
+        $resumen['saldo'] = [
+            'cajas'    => max(0, $resumen['inicial']['cajas'] - $resumen['ventas']['cajas'] - $resumen['envios_sgte_trans']['cajas']),
+            'kg_bruto' => max(0, $resumen['inicial']['kg_bruto'] - $resumen['ventas']['kg_bruto'] - $resumen['envios_sgte_trans']['kg_bruto']),
+            'taras'    => max(0, $resumen['inicial']['taras'] - $resumen['ventas']['taras'] - $resumen['envios_sgte_trans']['taras']),
+            'kg_neto'  => number_format(
+                $resumen['inicial']['kg_neto']
+                    - $resumen['ventas']['kg_neto']
+                    - $resumen['envios_sgte_trans']['kg_neto'],
+                3,
+                '.',
+                ''
+            ),
+        ];
 
+        $t->setAttribute('ventas_resumen_subtrans', $resumen);
+
+        return $t;
+    }
+
+    public function PesoInicialTotalTrans(TransformacionLote $transformacionLote)
+    {
+        $transformacionLote = $this->show($transformacionLote);
+
+        $sucursal = $transformacionLote->Sucursal;
+        $sucursal->file_sucursals = $sucursal->Filesucursals()->get()->each(function ($file) {
+            $file->path_url = url($file->File->path);
+        });
+        $sucursal->image = $sucursal->file_sucursals->first();
+
+        $pdf = Pdf::loadView('reportes.pdf.transformacionLote.peso_inicial_total', [
+            'trans'    => $transformacionLote,
+            'sucursal' => $sucursal
+        ])->setPaper('a4', 'landscape')->setOption('enable_php', true);
+
+        return $pdf->stream();
+    }
     public function ReporteVentasMovimientosTrans(TransformacionLote $transformacionLote)
     {
-        $transformacionLote = $this->detalles($transformacionLote);
+        $transformacionLote = $this->showTransReporteVenta($transformacionLote);
         $sucursal = $transformacionLote->Sucursal;
 
         $sucursal->file_sucursals = $sucursal->Filesucursals()->get()->each(function ($file) {
@@ -985,7 +1264,9 @@ protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): v
 
     public function ReporteGeneralTrans(TransformacionLote $transformacionLote)
     {
-        $transformacionLote = $this->detalles($transformacionLote);
+        $transformacionLote = $this->show($transformacionLote);
+        $transformacionLote = $this->showTransReporteVenta($transformacionLote);
+
         $sucursal = $transformacionLote->Sucursal;
 
         $sucursal->file_sucursals = $sucursal->Filesucursals()->get()->each(function ($file) {
@@ -996,7 +1277,7 @@ protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): v
         $pdf = Pdf::loadView('reportes.pdf.transformacionLote.reporte_general', [
             'trans' => $transformacionLote,
             'sucursal' => $sucursal
-        ])->setPaper('a4', 'landscape')->setOption('enable_php', true);
+        ])->setPaper('a4', 'portrait')->setOption('enable_php', true);
         return $pdf->stream();
     }
 
@@ -1014,6 +1295,7 @@ protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): v
     }
     public function cerrar(TransformacionLote $transformacionLote, Request $request)
     {
+        //dd($request->lista_subitems_transformacion);
         $transformacionLote->curso = 0;
         $transformacionLote->save();
         foreach ($request->lista_subitems_transformacion as $item) {
@@ -1021,7 +1303,7 @@ protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): v
             $itemSobraTrans->trans_id = $transformacionLote->id;
             $itemSobraTrans->item_id = $item['subitem']['id'];
             $itemSobraTrans->cajas = $item['total_cajas'];
-            //$itemSobraTrans->taras = $item['taras'];
+            $itemSobraTrans->taras = $item['total_taras'];
             $itemSobraTrans->pt_id = $item['pt']['id'];
             $itemSobraTrans->kgn = $item['total_peso_neto'];
 
@@ -1031,6 +1313,7 @@ protected function hydrateTraspasosAceptadosDesdeTrans(TransformacionLote $t): v
             } else {
                 $itemSobraTrans->kgb = $item['peso_neto_nuevo'];
             }
+
             $itemSobraTrans->kgn_nuevo = $item['peso_neto_nuevo'] ?? $item['total_peso_neto'];
             $itemSobraTrans->merma = $item['merma'] ?? 0;
             $itemSobraTrans->fecha = Carbon::now()->format('Y-m-d');

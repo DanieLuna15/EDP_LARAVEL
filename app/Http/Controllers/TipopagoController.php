@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tipopago;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Models\Tipopago;
 
 class TipopagoController extends Controller
 {
@@ -14,7 +15,7 @@ class TipopagoController extends Controller
      */
     public function index()
     {
-        return Tipopago::where('estado',1)->get();
+        return Tipopago::where('estado', 1)->get();
     }
 
     /**
@@ -25,10 +26,25 @@ class TipopagoController extends Controller
      */
     public function store(Request $request)
     {
-        $tipopago = new Tipopago();
-        $tipopago->name = $request->name;
-        $tipopago->save();
-        return $tipopago;
+        $validated = $request->validate(
+            [
+                'name' => [
+                    'required',
+                    'string',
+                    'max:100',
+                    Rule::unique('tipopagos', 'name'),
+                ],
+            ],
+            [
+                'name.required' => 'El nombre del método de pago es obligatorio.',
+                'name.string'   => 'El nombre debe ser un texto válido.',
+                'name.max'      => 'El nombre no puede superar los 100 caracteres.',
+                'name.unique'   => 'Ya existe un método de pago con este nombre.',
+            ]
+        );
+
+        $tipopago = Tipopago::create($validated);
+        return response()->json($tipopago, 201);
     }
 
     /**
@@ -39,7 +55,7 @@ class TipopagoController extends Controller
      */
     public function show(Tipopago $tipopago)
     {
-        
+
         return $tipopago;
     }
 
@@ -52,9 +68,25 @@ class TipopagoController extends Controller
      */
     public function update(Request $request, Tipopago $tipopago)
     {
-        $tipopago->name = $request->name;
-        $tipopago->save();
-        return $tipopago;
+        $validated = $request->validate(
+            [
+                'name' => [
+                    'required',
+                    'string',
+                    'max:100',
+                    Rule::unique('tipopagos', 'name')->ignore($tipopago->id),
+                ],
+            ],
+            [
+                'name.required' => 'El nombre del método de pago es obligatorio.',
+                'name.string'   => 'El nombre debe ser un texto válido.',
+                'name.max'      => 'El nombre no puede superar los 100 caracteres.',
+                'name.unique'   => 'Ya existe un método de pago con este nombre.',
+            ]
+        );
+
+        $tipopago->update($validated);
+        return response()->json($tipopago->fresh(), 200);
     }
 
     /**

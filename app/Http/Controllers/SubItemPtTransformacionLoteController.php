@@ -49,18 +49,12 @@ class SubItemPtTransformacionLoteController extends Controller
 
     public function store(Request $request)
     {
-        Log::info("=== INICIO store() SubItemPtTransformacionLote ===");
-        Log::info("Datos recibidos en request:", $request->all());
-
         $m = $request->items ?? [];
         if (!isset($m['lista_trozados']) || !is_array($m['lista_trozados'])) {
-            Log::warning("No se encontró 'lista_trozados' en el request o no es un array");
             return;
         }
 
         foreach ($m['lista_trozados'] as $index => $item) {
-            Log::info("Procesando elemento #{$index}:", $item);
-
             try {
                 $SubItemPtTransformacionLote = new SubItemPtTransformacionLote();
                 $SubItemPtTransformacionLote->fecha_hora = Carbon::now();
@@ -74,19 +68,16 @@ class SubItemPtTransformacionLoteController extends Controller
                 $SubItemPtTransformacionLote->pt_id = $item['item']['pt_id'] ?? null;
                 $SubItemPtTransformacionLote->cajas = $item['cajas_trans'] ?? 0;
                 $SubItemPtTransformacionLote->peso_bruto = $item['pb_trans'] ?? 0;
+                $SubItemPtTransformacionLote->taras = ($item['cajas_trans'] > 0)
+                    ? $item['cajas_trans'] * 2
+                    : 0;
                 $SubItemPtTransformacionLote->peso_neto = $item['pn_trans'] ?? 0;
 
                 $SubItemPtTransformacionLote->save();
-                Log::info("✅ Registro guardado correctamente con ID: {$SubItemPtTransformacionLote->id}");
             } catch (\Exception $e) {
-                Log::error("❌ Error al guardar elemento #{$index}: " . $e->getMessage(), [
-                    'item' => $item,
-                    'trace' => $e->getTraceAsString()
-                ]);
+
             }
         }
-
-        Log::info("=== FIN store() SubItemPtTransformacionLote ===");
     }
 
     /**

@@ -227,41 +227,126 @@ class PpController extends Controller
         }
         return $list;
     }
+    // public function showPPCronologico(Pp $pp)
+    // {
+    //     $pp->mes = $this->mes($pp->fecha);
+    //     $pp->url_pdf = url('reportes/pp/' . $pp->id);
+    //     $pp->url_inicial_2_pdf = url('reportes/pp-inicial-2/' . $pp->id);
+    //     $pp->url_inicial_total_pdf = url('reportes/pp-inicial-total/' . $pp->id);
+    //     $detalle_pp_venta = $pp->VentaDetallePps()->with(['venta.user'])->get()->groupBy('cinta_cliente_id');
+    //     $traspaso_pps_q   = $pp->TraspasoPps()->with(['Pp']);
+    //     $despliegue_pps_q = $pp->DespleguePps()->with(['Pp']);
+    //     $pp_traspaso_pps_q = $pp->PpTraspasoPps();
+    //     $list = [];
+
+    //     foreach ($detalle_pp_venta as $detalle) {
+    //         $cinta = $detalle->first()->CintaCliente;
+    //         $list[] = [
+    //             'cinta_cliente' => $cinta,
+    //             'detalle'       => $detalle,
+    //             'cajas'         => $detalle->where('estado', 1)->sum('cajas'),
+    //             'pollos'        => $detalle->where('estado', 1)->sum('pollos'),
+    //             'peso_bruto'    => $detalle->where('estado', 1)->sum('peso_bruto'),
+    //             'peso_neto'     => $detalle->where('estado', 1)->sum('peso_neto'),
+    //             'tara'          => $detalle->where('estado', 1)->sum('peso_bruto') - $detalle->where('estado', 1)->sum('peso_neto'),
+    //             'traspasos'     => (clone $pp_traspaso_pps_q)->where('cinta_cliente_id', $cinta->id)->get(),
+    //             'despliegues'   => (clone $despliegue_pps_q)->where('cinta_cliente_id', $cinta->id)->get(),
+    //             'sobras'        => (clone $traspaso_pps_q)->where('cinta_cliente_id_emisor', $cinta->id)->get(),
+    //         ];
+    //     }
+    //     $pp->sobrante_units = (int) (clone $traspaso_pps_q)->sum('pollos');
+    //     $pp->sobrante_kn    = (clone $traspaso_pps_q)->sum('peso_neto');
+    //     $pp->detalle_pp_venta_list = collect($list);
+    //     $promedioMerma = PromedioMerma::where('estado',1)->get()->first();
+    //     $pp->promedioMerma = $promedioMerma->promedio;
+    //     $pp_traspaso_pps_q = $pp->PpTraspasoPps();
+    //     return $pp;
+    // }
+
+
     public function showPPCronologico(Pp $pp)
     {
         $pp->mes = $this->mes($pp->fecha);
         $pp->url_pdf = url('reportes/pp/' . $pp->id);
         $pp->url_inicial_2_pdf = url('reportes/pp-inicial-2/' . $pp->id);
         $pp->url_inicial_total_pdf = url('reportes/pp-inicial-total/' . $pp->id);
-        $detalle_pp_venta = $pp->VentaDetallePps()->with(['venta.user'])->get()->groupBy('cinta_cliente_id');
-        $traspaso_pps_q   = $pp->TraspasoPps()->with(['Pp']);
-        $despliegue_pps_q = $pp->DespleguePps()->with(['Pp']);
-        $pp_traspaso_pps_q = $pp->PpTraspasoPps();
-        $list = [];
 
-        foreach ($detalle_pp_venta as $detalle) {
-            $cinta = $detalle->first()->CintaCliente;
+        // 1) Trae TODO lo necesario con relaciones para no reconsultar
+        $ventas        = $pp->VentaDetallePps()->with(['venta.user', 'CintaCliente'])->get();
+        $traspasosIn   = $pp->PpTraspasoPps()->with(['Pp', 'CintaCliente'])->get();                    // entrantes
+        $despliegues   = $pp->DespleguePps()->with(['Pp', 'CintaCliente'])->get();
+        $sobrasOut     = $pp->TraspasoPps()->with(['Pp'])  // si tienes relación CintaClienteEmisor, añádela aquí
+            ->get();                      // salientes (emitidas por este PP)
+
+        // 2) Agrupa por cinta
+        $ventasBy      = $ventas->groupBy('cinta_cliente_id');
+        $traspBy       = $traspasosIn->groupBy('cinta_cliente_id');               // campo: cinta receptora
+        $desplBy       = $despliegues->groupBy('cinta_cliente_id');               // campo: cinta del despliegue
+        $sobrasBy      = $sobrasOut->groupBy('cinta_cliente_id_emisor');          // campo: cinta emisora (sobras enviadas)
+
+        // 3) Conjunto de TODAS las cintas con algún movimiento
+        $allCintaIds = collect()
+            ->merge($ventasBy->keys())
+            ->merge($traspBy->keys())
+            ->merge($desplBy->keys())
+            ->merge($sobrasBy->keys())
+            ->filter()       // quita null
+            ->unique()
+            ->values();
+
+        // 4) Arma la lista final por cinta (aunque no tenga ventas)
+        $list = [];
+        foreach ($allCintaIds as $cintaId) {
+            // Busca el modelo CintaCliente a partir de cualquier fuente disponible
+            $cinta =
+                optional(optional($ventasBy->get($cintaId))->first())->CintaCliente ??
+                optional(optional($traspBy->get($cintaId))->first())->CintaCliente ??
+                optional(optional($desplBy->get($cintaId))->first())->CintaCliente;
+
+            // Colecciones de cada tipo para esta cinta (pueden venir vacías)
+            $detVentas   = $ventasBy->get($cintaId, collect());
+            $detTrasp    = $traspBy->get($cintaId, collect());
+            $detDespl    = $desplBy->get($cintaId, collect());
+            $detSobras   = $sobrasBy->get($cintaId, collect());
+
+            // Totales SOLO de ventas activas (estado=1), como ya hacías
+            $ventasActivas = $detVentas->where('estado', 1);
+            $sumCajas      = (int)   $ventasActivas->sum('cajas');
+            $sumPollos     = (int)   $ventasActivas->sum('pollos');
+            $sumBruto      = (float) $ventasActivas->sum('peso_bruto');
+            $sumNeto       = (float) $ventasActivas->sum('peso_neto');
+            $sumTara       = (float) ($sumBruto - $sumNeto);
+
             $list[] = [
-                'cinta_cliente' => $cinta,
-                'detalle'       => $detalle,
-                'cajas'         => $detalle->where('estado', 1)->sum('cajas'),
-                'pollos'        => $detalle->where('estado', 1)->sum('pollos'),
-                'peso_bruto'    => $detalle->where('estado', 1)->sum('peso_bruto'),
-                'peso_neto'     => $detalle->where('estado', 1)->sum('peso_neto'),
-                'tara'          => $detalle->where('estado', 1)->sum('peso_bruto') - $detalle->where('estado', 1)->sum('peso_neto'),
-                'traspasos'     => (clone $pp_traspaso_pps_q)->where('cinta_cliente_id', $cinta->id)->get(),
-                'despliegues'   => (clone $despliegue_pps_q)->where('cinta_cliente_id', $cinta->id)->get(),
-                'sobras'        => (clone $traspaso_pps_q)->where('cinta_cliente_id_emisor', $cinta->id)->get(),
+                'cinta_cliente' => $cinta,                 // puede venir null si nunca estuvo cargada; tu vista usa ->name
+                'detalle'       => $detVentas,             // ventas
+                'cajas'         => $sumCajas,
+                'pollos'        => $sumPollos,
+                'peso_bruto'    => $sumBruto,
+                'peso_neto'     => $sumNeto,
+                'tara'          => $sumTara,
+                'traspasos'     => $detTrasp,              // PP->PP (entrantes)
+                'despliegues'   => $detDespl,              // despliegues
+                'sobras'        => $detSobras,             // sobras enviadas (salientes)
             ];
         }
-        $pp->sobrante_units = (int) (clone $traspaso_pps_q)->sum('pollos');
-        $pp->sobrante_kn    = (clone $traspaso_pps_q)->sum('peso_neto');
-        $pp->detalle_pp_venta_list = collect($list);
-        $promedioMerma = PromedioMerma::where('estado',1)->get()->first();
-        $pp->promedioMerma = $promedioMerma->promedio;
-        $pp_traspaso_pps_q = $pp->PpTraspasoPps();
+
+        // 5) Sobrantes globales del PP (tal como tenías)
+        $pp->sobrante_units = (int) $sobrasOut->sum('pollos');
+        $pp->sobrante_kn    = (float) $sobrasOut->sum('peso_neto');
+
+        // 6) Asigna la colección ordenada por nombre de grupo (si existe)
+        $pp->detalle_pp_venta_list = collect($list)
+            ->sortBy(fn($g) => mb_strtolower(optional($g['cinta_cliente'])->name ?? ''))
+            ->values();
+
+        // 7) Promedio merma (como lo tenías)
+        $promedioMerma = PromedioMerma::where('estado', 1)->first();
+        $pp->promedioMerma = optional($promedioMerma)->promedio ?? 0;
+
         return $pp;
     }
+
 
     // public function detalle(Pp $pp)
     // {

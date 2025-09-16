@@ -578,7 +578,7 @@
                                             <div class="form-group ">
                                                 <label>Choferes</label>
                                                 <div class="input-group">
-                                                    <select v-model="chofer" class="form-control">
+                                                    <select v-model="chofer" class="form-control select_chofer">
                                                         <option value="" disabled selected>Seleccionar</option>
                                                         <template v-for="m in chofers">
                                                             <option :disabled="m.turno_chofer == null"
@@ -662,26 +662,24 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-3">
-                                            <div class="form-group ">
-                                                <label>Metodo de Pago</label>
-                                                <div class="input-group">
-                                                    <select class="form-control" v-model="metodo_pago">
-                                                        <option value="1" >Contado</option>
-                                                        <option value="2" >Credito</option>
-                                                        <option value="3" >Credito Entrega</option>
-                                                    </select>
 
-                                                </div>
+                                        <div class="col-sm-3 col-6">
+                                            <div class="form-group ">
+                                                <label>Método de pago</label>
+                                                <select v-model="metodo_pago" class="form-control select_metodo">
+                                                    <option value="" disabled selected>Seleccionar</option>
+                                                    <option v-for="m in tipopagos" :key="m.id" :value="m.id">{{ m.name }}</option>
+                                                </select>
                                             </div>
                                         </div>
-                                        <div class="col-12">
 
+                                        <div class="col-12">
                                             <div class="form-group ">
                                                 <label>Observacion</label>
                                                 <input type="text" class="form-control" v-model="entrega.observacion">
                                             </div>
                                         </div>
+
                                         <div class="col-12">
                                             <div class="row">
                                                 <template v-for="d_pp in venta_pps">
@@ -940,7 +938,7 @@
                                                         <thead>
                                                             <tr>
                                                                 <th colspan="13" class="text-center bg-primary text-white">
-                                                                    TRANSFORMACIONES
+                                                                    SUBTRANSFORMACIONES
                                                                 </th>
                                                             </tr>
                                                             <tr>
@@ -960,7 +958,7 @@
                                                         <tbody>
                                                             <template v-for="(m,i) in transformacions_list">
                                                                 <tr>
-                                                                    <td>TR-{{ m . tramsformacion . nro }}</td>
+                                                                    <td>SUBTR-{{ m . tramsformacion . nro }}</td>
                                                                     <td>{{ m . subitem . name }}</td>
                                                                     <td>
                                                                         <input type="number" class="form-control form-control-sm"
@@ -990,7 +988,7 @@
                                                                     <td>
 
                                                                         <input type="text" class="form-control form-control-sm"
-                                                                            :value="m.subtotal">
+                                                                            :value="m.subtotal" readonly>
                                                                     </td>
                                                                     <td>
                                                                         <div class="btn-group">
@@ -1668,7 +1666,7 @@
                                                                     N°
                                                                 </th>
                                                                 <th>
-                                                                    TRANSFORMACIONES
+                                                                    SUBTRANSFORMACIONES
                                                                 </th>
                                                                 <th style="display: none">
                                                                     CAJAS
@@ -1686,7 +1684,7 @@
                                                                 <tr class="tr-hover"
                                                                     v-for="item in m.lista_subitems_transformacion"
                                                                      @click="AddTransformacion(item,m)">
-                                                                    <td><strong>TR-{{ m . nro }}</strong></td>
+                                                                    <td><strong>SUBTR-{{ m . nro }}</strong></td>
                                                                     <td>{{ item . subitem . name }}</td>
                                                                     <td style="display: none">{{ item . total_cajas }}</td>
                                                                     <td style="display: none">{{ Number( item . total_peso_bruto).toFixed(3) }}</td>
@@ -1866,7 +1864,8 @@
                             unidad:0,
                             precio_kg:0
                         },
-                        cart_acuerdo_items:[]
+                        cart_acuerdo_items:[],
+                        tipopagos: [],
                     }
                 },
                 computed: {
@@ -1880,14 +1879,13 @@
                     },
                     isButtonDisabled() {
                         const totalVenta = this.totalAll;
-                        if (this.metodo_pago == 2) {
+                        if (this.metodo_pago == 3) {
                             if (this.creditos_activos_saldo <= 0) {
                                 this.showCreditoError = true;
                                 this.showLimiteCreditoError = false;
                                 return true;
                             }
                             if (this.saldo_limite_crediticio < totalVenta) {
-
                                 this.showLimiteCreditoError = true;
                                 this.showCreditoError = false;
                                 return true;
@@ -1897,7 +1895,6 @@
                         this.showCreditoError = false;
                         return false;
                     },
-
 
                     GastosModel() {
                         return this.cart_gastos_model.map((i) => {
@@ -3612,7 +3609,7 @@
                         let pollos_x_caja = red(pp.pollos) / Number(pp.cajas,3);
 
                         pp.cajas_vender      = pp.cajas;
-                        pp.peso_bruto_vender = red(pp.peso_bruto, 3); 
+                        pp.peso_bruto_vender = red(pp.peso_bruto, 3);
                         pp.peso_neto_vender  = red(pp.peso_neto, 3);
                         pp.pollos_vender     = pp.pollos;
                         pp.pollos_x_caja     = Math.round(pollos_x_caja);
@@ -3688,6 +3685,7 @@
                                     self.GET_DATA("transItems"),
                                     self.GET_DATA("transEspecials"),
                                     self.GET_DATA("medidas"),
+                                    self.GET_DATA('tipopagos'),
 
                                 ]).then((v) => {
                                     self.pps = v[0]
@@ -3725,6 +3723,8 @@
                                     if (medidaCajas) {
                                         self.retraccion = medidaCajas.retraccion;
                                     }
+
+                                    self.tipopagos = v[18]
                                 })
                                 $(".select_cliente").val(null).trigger('change');
                                 $(".select_codigo_cliente").val(null).trigger('change');
@@ -3858,6 +3858,14 @@
 
                                     self.creditos_activos_saldo = self.cliente.creditos_activos_saldo;
                                     self.saldo_limite_crediticio = self.cliente.saldo_limite_crediticio;
+
+                                    if (self.cliente.tipopago_id) {
+                                        self.metodo_pago = Number(self.cliente.tipopago_id);
+                                        $(".select_metodo").val(String(self.metodo_pago)).trigger('change');
+                                    } else {
+                                        self.metodo_pago = '';
+                                        $(".select_metodo").val(1).trigger('change');
+                                    }
 
                                     if (self.cliente.chofer_id) {
                                         self.chofer = self.chofers.find(chofer => chofer.id === self.cliente.chofer_id);
