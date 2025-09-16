@@ -25,7 +25,7 @@
         return view('login');
     });
     Route::post('login', [UserController::class, 'login'])->name('login');
-    Route::group(['middleware' => 'auth','middleware' => 'menu.access'], function () {
+    Route::group(['middleware' => 'auth'], function () {
         Route::get('/', function () {
             return view('index');
         });
@@ -46,7 +46,7 @@
         Route::get('/sucursal', function () {
             return view('sucursal');
         });
-        Route::group(['prefix' => '/preventista', 'middleware' => 'menu.access'], function () {
+        Route::group(['prefix' => '/preventista'], function () {
             Route::get('/home', function () {
                 return view('preventista.home');
             })->name('preventista.home');
