@@ -85,7 +85,7 @@
 
 <body>
     <div class="header">
-        <strong>RECIBO DE CAJAS</strong>
+        <strong>RECIBO DE CAJAS #{{$venta->id}}</strong>
         @if($marca !== "")
             <br>{{ $marca }}
         @endif <br>

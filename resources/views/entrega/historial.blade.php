@@ -208,7 +208,7 @@
                                         <div class="col-4">
                                             <div class="form-group">
                                                 <label for="">Cajas / Recibir</label>
-                                                <input type="text" name="" class="form-control" id=""
+                                                <input type="number" name="" class="form-control" id=""
                                                     v-model="despacho.cajas_entregar">
                                             </div>
                                         </div>
@@ -246,7 +246,7 @@
                                         <div class="col-4">
                                             <div class="form-group">
                                                 <label for="">Pago con </label>
-                                                <input type="text" class="form-control" v-model="despacho.pago_con">
+                                                <input type="number" class="form-control" v-model="despacho.pago_con">
                                             </div>
                                         </div>
                                         <div class="col-4">
@@ -693,6 +693,9 @@
                         this.loading.save = true;
                         const despachoData = {
                             ...this.despacho,
+                            monto: Number(this.despacho.monto || 0),
+                            pago_con: Number(this.despacho.pago_con || 0),
+                            cajas_entregar: Number(this.despacho.cajas_entregar || 0),
                             entregado: this.despacho.entregado
                         };
                         try {
@@ -712,7 +715,7 @@
                             }
 
                             const pendienteTotal = Number(this.venta.pendiente_total);
-                            const pagoCon = Number(this.despacho.pago_con);
+                            const pagoCon = despachoData.pago_con;
 
 
                             if (
@@ -751,100 +754,116 @@
                                 });
                                 return;
                             }
-                            this.despacho.arqueo = this.arqueo;
-                            this.despacho.venta = this.venta;
-                            let res = await axios.post("{{ url('api/entregas-venta') }}", this.despacho);
-                            if (res.data.url_pdf_cobranza && res.data.url_pdf_cajas) {
-                                this.ConsultarFecha();
-                                $('#modalDesapacho').modal('hide');
-                                swal.fire({
-                                    title: 'Venta despachada correctamente',
-                                    type: 'success',
-                                    html: `
-                                        <div class="row g-2">
-                                            <div class="col-4">
-                                                <a href="${res.data.url_pdf_cobranza}" target="_blank" rel="noopener" class="btn btn-primary w-100">
-                                                    <i class="fa fa-print"></i> Cobranza (venta)
-                                                </a>
-                                            </div>
-                                            <div class="col-4">
-                                                <a href="${res.data.url_pdf_cajas}" target="_blank" rel="noopener" class="btn btn-info w-100">
-                                                    <i class="fa fa-print"></i> Cajas (admin)
-                                                </a>
-                                            </div>
-                                            <div class="col-4">
-                                                <a href="${res.data.url_pdf_cajas_chofer}" target="_blank" rel="noopener" class="btn btn-success w-100">
-                                                    <i class="fa fa-print"></i> Cajas (chofer)
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3 text-center">
-                                            <button id="btn-cerrar" class="btn btn-danger w-50">Cerrar</button>
-                                        </div>
-                                    `,
-                                    showConfirmButton: false,
-                                    showCancelButton: false,
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: true,
-                                    padding: '2em',
-                                    didOpen: () => {
-                                        document.getElementById('btn-cerrar')?.addEventListener('click',
-                                            (e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                swal.close();
-                                                // Mostrar un swal de confirmación
-                                                // swal.fire({
-                                                //     title: 'Confirmación',
-                                                //     text: '¿Estás seguro de cerrar la ventana?',
-                                                //     type: 'warning',
-                                                //     showCancelButton: true,
-                                                //     confirmButtonText: 'Sí, cerrar',
-                                                //     cancelButtonText: 'No, mantener abierta',
-                                                // }).then((result) => {
-                                                //     if (result.isConfirmed) {
-                                                //         // Si el usuario confirma, cerramos el swal original
-                                                //         swal.close();
-                                                //     }
-                                                // });
-                                            });
-                                    },
 
-                                    onOpen: (el) => {
-                                        el.querySelector('#btn-cerrar')?.addEventListener('click', (
-                                            e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                swal.close();
-                                                // Mostrar un swal de confirmación
-                                                // swal.fire({
-                                                //     title: 'Confirmación',
-                                                //     text: '¿Estás seguro de cerrar la ventana?',
-                                                //     type: 'warning',
-                                                //     showCancelButton: true,
-                                                //     confirmButtonText: 'Sí, cerrar',
-                                                //     cancelButtonText: 'No, mantener abierta',
-                                                // }).then((result) => {
-                                                //     if (result.isConfirmed) {
-                                                //         // Si el usuario confirma, cerramos el swal original
-                                                //         swal.close();
-                                                //     }
-                                                // });
-                                            });
-                                    }
+                            const payload = {
+                                ...despachoData,
+                                arqueo: this.arqueo,
+                                venta: this.venta
+                            };
 
-                                });
+                            let res = await axios.post("{{ url('api/entregas-venta') }}", payload);
+                            this.ConsultarFecha();
+                            $('#modalDesapacho').modal('hide');
 
+                            const {
+                                url_pdf_cobranza,
+                                url_pdf_cajas,
+                                url_pdf_cajas_chofer
+                            } = res.data || {};
 
-                            } else {
-                                swal.fire({
-                                    title: 'Error',
-                                    text: 'No se pudo generar los PDFs de cobranza y cajas.',
-                                    type: 'error',
-                                    confirmButtonText: 'Aceptar',
-                                    confirmButtonClass: 'btn btn-danger',
-                                });
+                            const actionButtons = [];
+
+                            if (despachoData.pago_con > 0 && url_pdf_cobranza) {
+                                actionButtons.push(`
+                                    <a href="${url_pdf_cobranza}" target="_blank" rel="noopener" class="btn btn-primary w-100">
+                                        <i class="fa fa-print"></i> Cobranza (venta)
+                                    </a>
+                                `);
                             }
+
+                            if (despachoData.cajas_entregar > 0 && url_pdf_cajas) {
+                                actionButtons.push(`
+                                    <a href="${url_pdf_cajas}" target="_blank" rel="noopener" class="btn btn-info w-100">
+                                        <i class="fa fa-print"></i> Cajas (admin)
+                                    </a>
+                                `);
+                            }
+
+                            if (despachoData.cajas_entregar > 0 && url_pdf_cajas_chofer) {
+                                actionButtons.push(`
+                                    <a href="${url_pdf_cajas_chofer}" target="_blank" rel="noopener" class="btn btn-success w-100">
+                                        <i class="fa fa-print"></i> Cajas (chofer)
+                                    </a>
+                                `);
+                            }
+
+                            const columnClass = actionButtons.length === 1 ? 'col-12' : actionButtons.length === 2 ? 'col-6' : 'col-4';
+
+                            const buttonsHtml = actionButtons.length
+                                ? `<div class="row g-2">${actionButtons.map(btn => `<div class="${columnClass}">${btn}</div>`).join('')}</div>`
+                                : '<p class="text-center mb-0">No se generaron documentos.</p>';
+
+                            swal.fire({
+                                title: 'Venta despachada correctamente',
+                                type: 'success',
+                                html: `
+                                    ${buttonsHtml}
+                                    <div class="mt-3 text-center">
+                                        <button id="btn-cerrar" class="btn btn-danger w-50">Cerrar</button>
+                                    </div>
+                                `,
+                                showConfirmButton: false,
+                                showCancelButton: false,
+                                allowOutsideClick: false,
+                                allowEscapeKey: true,
+                                padding: '2em',
+                                didOpen: () => {
+                                    document.getElementById('btn-cerrar')?.addEventListener('click',
+                                        (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            swal.close();
+                                            // Mostrar un swal de confirmación
+                                            // swal.fire({
+                                            //     title: 'Confirmación',
+                                            //     text: '¿Estás seguro de cerrar la ventana?',
+                                            //     type: 'warning',
+                                            //     showCancelButton: true,
+                                            //     confirmButtonText: 'Sí, cerrar',
+                                            //     cancelButtonText: 'No, mantener abierta',
+                                            // }).then((result) => {
+                                            //     if (result.isConfirmed) {
+                                            //         // Si el usuario confirma, cerramos el swal original
+                                            //         swal.close();
+                                            //     }
+                                            // });
+                                        });
+                                },
+
+                                onOpen: (el) => {
+                                    el.querySelector('#btn-cerrar')?.addEventListener('click', (
+                                        e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            swal.close();
+                                            // Mostrar un swal de confirmación
+                                            // swal.fire({
+                                            //     title: 'Confirmación',
+                                            //     text: '¿Estás seguro de cerrar la ventana?',
+                                            //     type: 'warning',
+                                            //     showCancelButton: true,
+                                            //     confirmButtonText: 'Sí, cerrar',
+                                            //     cancelButtonText: 'No, mantener abierta',
+                                            // }).then((result) => {
+                                            //     if (result.isConfirmed) {
+                                            //         // Si el usuario confirma, cerramos el swal original
+                                            //         swal.close();
+                                            //     }
+                                            // });
+                                        });
+                                }
+
+                            });
 
                         } catch (e) {
                             swal.fire({

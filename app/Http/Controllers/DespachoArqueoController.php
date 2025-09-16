@@ -34,7 +34,6 @@ class DespachoArqueoController extends Controller
     public function store(Request $request)
     {
         $venta = Venta::find($request->venta['id']);
-        
         if (!$venta) {
             return response()->json(['error' => 'Venta no encontrada.'], 404);
         }
@@ -63,6 +62,7 @@ class DespachoArqueoController extends Controller
             $venta->save();
         }
         $venta->despachado = 2;
+        $venta->metodo_pago = $request->venta['metodo_pago'];
         $venta->save();
 
         $cliente = $venta->Cliente;
@@ -74,36 +74,43 @@ class DespachoArqueoController extends Controller
         $cajas_a_entregar = $request->cajas_entregar;
 
         $entregaCajaRecuperada = null;
-        $entregaCaja = new EntregaCaja();
-        $cajas_recuperadas = 0;
+        if ($cajas_a_entregar > 0) {
+            # code...
+            $entregaCaja = new EntregaCaja();
+            $cajas_recuperadas = 0;
 
-        if ($cajas_a_entregar > $saldo_anterior) {
-            $cajas_recuperadas = $cajas_a_entregar - $saldo_anterior;
-            $cajas_a_entregar_real = $saldo_anterior;
-            $saldo_actual = 0;
-        } else {
-            $cajas_a_entregar_real = $cajas_a_entregar;
-            $saldo_actual = $saldo_anterior - $cajas_a_entregar_real;
-        }
+            if ($cajas_a_entregar > $saldo_anterior) {
+                $cajas_recuperadas = $cajas_a_entregar - $saldo_anterior;
+                $cajas_a_entregar_real = $saldo_anterior;
+                $saldo_actual = 0;
+            } else {
+                $cajas_a_entregar_real = $cajas_a_entregar;
+                $saldo_actual = $saldo_anterior - $cajas_a_entregar_real;
+            }
 
-        $entregaCaja->cliente_id = $cliente->id;
-        $entregaCaja->cajas = $cajas_a_entregar_real;
-        $entregaCaja->saldo_anterior = $saldo_anterior;
-        $entregaCaja->saldo_actual = $saldo_actual;
-        $entregaCaja->fecha = date('Y-m-d');
-        $entregaCaja->chofer_id = $chofer_id;
-        $entregaCaja->venta_id = $venta->id;
-        $entregaCaja->save();
+            $entregaCaja->cliente_id = $cliente->id;
+            $entregaCaja->cajas = $cajas_a_entregar_real;
+            $entregaCaja->saldo_anterior = $saldo_anterior;
+            $entregaCaja->saldo_actual = $saldo_actual;
+            $entregaCaja->fecha = date('Y-m-d');
+            $entregaCaja->chofer_id = $chofer_id;
+            $entregaCaja->venta_id = $venta->id;
+            $entregaCaja->save();
 
-        if ($cajas_recuperadas > 0) {
-            $entregaCajaRecuperada = EntregaCajaRecuperada::create([
-                'cliente_id' => $cliente->id,
-                'cajas' => $cajas_recuperadas,
-                'fecha' => date('Y-m-d'),
-                'estado' => 1,
-                'entrega_id' => $entregaCaja->id,
-                'chofer_id' => $chofer_id,
-            ]);
+            if ($cajas_recuperadas > 0) {
+                $entregaCajaRecuperada = EntregaCajaRecuperada::create([
+                    'cliente_id' => $cliente->id,
+                    'cajas' => $cajas_recuperadas,
+                    'fecha' => date('Y-m-d'),
+                    'estado' => 1,
+                    'entrega_id' => $entregaCaja->id,
+                    'chofer_id' => $chofer_id,
+                ]);
+            }
+            // $venta->url_pdf_cobranza = url("reportes/cobranzas-oficial-ind/{$arqueoVenta->id}");
+            $venta->url_pdf_cajas = url("reportes/cajas-oficial/{$entregaCaja->id}");
+            $venta->url_pdf_cajas_chofer = url("reportes/cajas-oficial-chofer/{$entregaCaja->id}");
+
         }
 
         $arqueoData = $request->arqueo;
@@ -119,28 +126,31 @@ class DespachoArqueoController extends Controller
         if (!isset($arqueoActivo['apertura']) || $arqueoActivo['apertura'] != 1) {
             return response()->json(['error' => 'El arqueo no está abierto (apertura ≠ 1)'], 422);
         }
+        /////pago_con
+        if ($request->pago_con > 0) {
 
-        $arqueoVenta = new ArqueoVenta();
-        $arqueoVenta->arqueo_id = $arqueoActivo['id'];
-        $arqueoVenta->venta_id = $request->venta['id'];
-        $arqueoVenta->formapago_id = $request->formapago_id;
-        $arqueoVenta->user_id = $arqueoActivo['user_id'];
+            $arqueoVenta = new ArqueoVenta();
+            $arqueoVenta->arqueo_id = $arqueoActivo['id'];
+            $arqueoVenta->venta_id = $request->venta['id'];
+            $arqueoVenta->formapago_id = $request->formapago_id;
+            $arqueoVenta->user_id = $arqueoActivo['user_id'];
 
-        $arqueoVenta->pago_con = $request->pago_con;
-        if ($request->pago_con > $monto) {
-            $arqueoVenta->cambio = $request->pago_con - $monto;
-            $arqueoVenta->monto = $monto;
-        } else {
-            $arqueoVenta->cambio = 0;
-            $arqueoVenta->monto = $request->pago_con;
+            $arqueoVenta->pago_con = $request->pago_con;
+            if ($request->pago_con > $monto) {
+                $arqueoVenta->cambio = $request->pago_con - $monto;
+                $arqueoVenta->monto = $monto;
+            } else {
+                $arqueoVenta->cambio = 0;
+                $arqueoVenta->monto = $request->pago_con;
+            }
+            $arqueoVenta->save();
+
+            // $entregaCajaRecuperadaId = $entregaCajaRecuperada ? $entregaCajaRecuperada->id : 0;
+            $venta->url_pdf_cobranza = url("reportes/cobranzas-oficial-ind/{$arqueoVenta->id}");
+            // $venta->url_pdf_cajas = url("reportes/cajas-oficial/{$entregaCaja->id}");
+            // $venta->url_pdf_cajas_chofer = url("reportes/cajas-oficial-chofer/{$entregaCaja->id}");
         }
-        $arqueoVenta->save();
 
-        $entregaCajaRecuperadaId = $entregaCajaRecuperada ? $entregaCajaRecuperada->id : 0;
-
-        $venta->url_pdf_cobranza = url("reportes/cobranzas-oficial-ind/{$arqueoVenta->id}");
-        $venta->url_pdf_cajas = url("reportes/cajas-oficial/{$entregaCaja->id}");
-        $venta->url_pdf_cajas_chofer = url("reportes/cajas-oficial-chofer/{$entregaCaja->id}");
 
         return response()->json([
             'url_pdf_cobranza' => $venta->url_pdf_cobranza,
