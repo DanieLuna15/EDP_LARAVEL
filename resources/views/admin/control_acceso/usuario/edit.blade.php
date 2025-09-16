@@ -88,7 +88,7 @@
                             let res = await axios.put("{{ url('api/users') }}/{{ $id }}", this.model);
                             if (res.data.success) {
                                 sessionStorage.setItem('success_message', res.data.success);
-                                window.location.href = "{{ url('admin/personal/usuario') }}";
+                                window.location.href = "{{ url('admin/control_acceso/usuario') }}";
                             }
                         } catch (e) {
                             let errorList = '';

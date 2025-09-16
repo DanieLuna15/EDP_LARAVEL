@@ -6,6 +6,9 @@
                     <div class="col-lg-8 col-12">
                         <div class="widget-content widget-content-area br-6">
                             <div class="section general-info">
+                                <div>
+                                    <button class="btn btn-danger" @click="back()"><- Regresar</button>
+                                </div>
                                 <div class="info">
                                     <h6 class="">Informacion General</h6>
                                     <div class="row">
@@ -40,9 +43,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-6">
-                                            <button class="btn btn-danger w-100" @click="back()">Regresar</button>
-                                        </div>
+
                                         <div class="col-6">
                                             <button class="btn btn-success w-100" @click="Save()">Guardar</button>
                                         </div>
@@ -88,7 +89,7 @@
                             let res = await axios.post("{{ url('api/users') }}", this.model);
                             if (res.data.success) {
                                 sessionStorage.setItem('success_message', res.data.success);
-                                window.location.href = "{{ url('admin/personal/usuario') }}";
+                                window.location.href = "{{ url('admin/control_acceso/usuario') }}";
                             }
                         } catch (e) {
                             let errorList = '';

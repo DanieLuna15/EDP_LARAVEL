@@ -82,7 +82,7 @@
                                     </div>
                                     <div class="d-sm-flex justify-content-between">
                                         <div class="field-wrapper">
-                                            <button @click="Save()" type="button" class="btn btn-primary"
+                                            <button @click="Save()" type="submit" class="btn btn-primary"
                                                 value="">Iniciar Sesion</button>
                                         </div>
                                     </div>

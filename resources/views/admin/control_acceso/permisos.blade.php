@@ -203,7 +203,7 @@
                                                 v-model="formMenu.icon" required>
                                                 <option disabled value="">Seleccione un ícono</option>
                                                 <option v-for="item in menuList" :value="item.icon" :data-icon="item.icon">
-                                                    {{ item . text }}
+                                                    {{ item .icon }}
                                                 </option>
                                             </select>
                                         </div>
@@ -1421,10 +1421,12 @@
                             }
                         } catch (e) {}
                         const self = this;
-                        const $parent = window.jQuery(this.$refs.selectIcon).closest('.modal');
+                        // Usar .modal-content como parent para evitar que el dropdown tome el ancho de toda la ventana (.modal)
+                        const $parent = window.jQuery(this.$refs.selectIcon).closest('.modal-content');
                         $el.select2({
                             width: '100%',
                             dropdownParent: $parent.length ? $parent : undefined,
+                            dropdownAutoWidth: true,
                             templateResult: function(state) {
                                 if (!state.id) return state.text;
                                 const icon = state.element && state.element.dataset ? state.element.dataset
@@ -1432,7 +1434,7 @@
                                 const cls = icon ? `mdi mdi-${icon}` : '';
                                 const label = state.text || icon || '';
                                 return window.jQuery(
-                                    `<span class="s2-icon-option"><i class="${cls}"></i><span>${label}</span></span>`
+                                    `<span class="s2-icon-option" title="${label}"><i class="${cls}"></i></span>`
                                 );
                             },
                             templateSelection: function(state) {
@@ -1442,13 +1444,12 @@
                                 const cls = icon ? `mdi mdi-${icon}` : '';
                                 const label = state.text || icon || '';
                                 return window.jQuery(
-                                    `<span class="s2-icon-option"><i class="${cls}"></i><span>${label}</span></span>`
+                                    `<span class="s2-icon-option" title="${label}"><i class="${cls}"></i></span>`
                                 );
                             },
                             escapeMarkup: function(m) {
                                 return m;
                             },
-                            dropdownAutoWidth: false,
                             placeholder: 'Seleccione un ícono',
                         }).on('change', function() {
                             const val = $el.val();
@@ -1461,6 +1462,7 @@
                                 const w = $el.outerWidth();
                                 inst.$dropdown.css({
                                     minWidth: w,
+                                    maxWidth: w,
                                     width: w
                                 });
                             }
@@ -1852,10 +1854,20 @@
                 font-size: 1.1rem;
                 vertical-align: middle;
             }
+            /* Icon-only: centrar y sin margen extra */
+            .s2-icon-option {
+                justify-content: center;
+            }
+            .s2-icon-option .mdi {
+                margin-right: 0 !important;
+            }
 
             .select2-selection__rendered .mdi {
                 margin-right: .35rem;
                 vertical-align: middle;
+            }
+            .select2-container--default .select2-selection--single .s2-icon-option .mdi {
+                margin-right: 0 !important;
             }
 
             .select2-container .select2-selection--single {
@@ -1876,9 +1888,10 @@
             }
 
             .select2-dropdown {
-                width: auto !important;
-                min-width: 100% !important;
-                max-width: 100% !important;
+                /* No forzar al ancho del parent (.modal). Se ajusta por JS al ancho del select */
+                width: auto;
+                min-width: 0;
+                max-width: none;
                 box-sizing: border-box;
             }
 
@@ -1889,9 +1902,20 @@
 
             .select2-results__options[role="listbox"] {
                 display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                /* Hacer responsivo el número de columnas para evitar dropdown gigante */
+                grid-template-columns: 1fr;
                 gap: .25rem .5rem;
                 padding: .25rem;
+            }
+            @media (min-width: 420px) {
+                .select2-results__options[role="listbox"] {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+            @media (min-width: 640px) {
+                .select2-results__options[role="listbox"] {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
             }
 
             .select2-results__option {

@@ -3,54 +3,58 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\RolUser;
+use App\Models\User;
+use App\Models\Rol;
+// use App\Models\User;
 class RolUserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         //
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        $input = $request->all();
+        $data = $request->only(['rol_id', 'usuario_id']);
+        $request->validate([
+            'rol_id' => 'required|integer',
+            'usuario_id' => 'required|integer',
+        ]);
+        try {
+            // Validar que el rol exista
+            $role = Rol::find($data['rol_id']);
+            if (! $role) {
+                return response()->json([
+                    'message' => 'Rol no encontrado',
+                ], 422);
+            }
 
-        $rolId     = $input['rol_id'];
-        $usuarioId = $input['usuario_id'];
+            // Crear o actualizar registro en tabla propia
+            $rolUser = RolUser::where('usuario_id', $data['usuario_id'])->first();
+            if ($rolUser) {
+                $rolUser->rol_id = $data['rol_id'];
+                $rolUser->save();
+            } else {
+                $rolUser = RolUser::create($data);
+            }
 
-        $rolUser = RolUser::where('usuario_id', $usuarioId)->first();
+            // Sincronizar también con Spatie (model_has_roles)
+            $user = User::find($data['usuario_id']);
+            if ($user) {
+                $user->syncRoles([$role->name]);
+            }
 
-        if ($rolUser != null) {
-
-            $rolUser_ = RolUser::find($rolUser->id);
-
-            $rolUser_->rol_id = $rolId;
-            $rolUser_->save();
-            return $rolUser;
-
-        } else {
-            $rol = RolUser::create($input);
-            return $rol;
+            return response()->json($rolUser, 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'No se pudo asignar el rol',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 

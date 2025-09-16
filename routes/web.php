@@ -25,7 +25,7 @@
         return view('login');
     });
     Route::post('login', [UserController::class, 'login'])->name('login');
-    Route::group(['middleware' => 'auth'], function () {
+    Route::group(['middleware' => 'auth','middleware' => 'menu.access'], function () {
         Route::get('/', function () {
             return view('index');
         });
@@ -46,7 +46,7 @@
         Route::get('/sucursal', function () {
             return view('sucursal');
         });
-        Route::group(['prefix' => '/preventista'], function () {
+        Route::group(['prefix' => '/preventista', 'middleware' => 'menu.access'], function () {
             Route::get('/home', function () {
                 return view('preventista.home');
             })->name('preventista.home');
@@ -99,7 +99,7 @@
             });
         });
 
-        Route::group(['prefix' => '/admin'], function () {
+        Route::group(['prefix' => '/admin', 'middleware' => 'menu.access'], function () {
             Route::get('/logs', function () {
                 return view('admin.log');
             });
@@ -213,7 +213,7 @@
                 });
             });
         });
-        Route::group(['prefix' => '/rrhh'], function () {
+        Route::group(['prefix' => '/rrhh' , 'middleware' => 'menu.access'], function () {
             Route::get('/area', function () {
                 return view('rrhh.areas');
             });
