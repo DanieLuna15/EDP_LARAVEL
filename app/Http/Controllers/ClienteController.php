@@ -34,7 +34,7 @@ class ClienteController extends Controller
             'CintaCliente',
             'AcuerdoCliente',
             'Ventas' => function ($query) {
-                $query->whereIn('metodo_pago', [2, 3])
+                $query->whereIn('metodo_pago', [2, 3, 4])
                     ->where('pendiente_total', '>', 0)
                     ->where('estado', 1);
             }
@@ -71,7 +71,7 @@ class ClienteController extends Controller
             'ClientePps',
             'ClientePts',
             'Ventas' => function ($query) {
-                $query->whereIn('metodo_pago', [2, 3])
+                $query->whereIn('metodo_pago', [2, 3, 4])
                     ->where('pendiente_total', '>', 0)
                     ->where('estado', 1);
             }

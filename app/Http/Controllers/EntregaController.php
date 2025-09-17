@@ -75,7 +75,7 @@ class EntregaController extends Controller
                 $item->url_2_pdf = url("reportes/ventas-oficial/$item->id");
                 $item->url_3_pdf = url("reportes/ticket-ventas-oficial/$item->id");
                 $ventas_a_credito = $item->Cliente->Ventas()
-                    ->whereIn('metodo_pago', [2, 3])
+                    ->whereIn('metodo_pago', [2, 3, 4])
                     ->where('pendiente_total', '>', 0)
                     ->where('estado', 1)
                     ->get();
@@ -116,7 +116,7 @@ class EntregaController extends Controller
             $item->url_3_pdf = url("reportes/ticket-ventas-oficial/$item->id");
 
             $ventas_a_credito = $item->Cliente->Ventas()
-                    ->whereIn('metodo_pago', [2, 3])
+                    ->whereIn('metodo_pago', [2, 3, 4])
                     ->where('pendiente_total', '>', 0)
                     ->where('estado', 1)
                     ->get();
@@ -1205,7 +1205,7 @@ class EntregaController extends Controller
 
     private function obtenerVentasCredito($fecha_inicio = null, $fecha_fin = null, $cliente_id = null)
     {
-        $query = Venta::whereIn('metodo_pago', [1, 2, 3])
+        $query = Venta::whereIn('metodo_pago', [1, 2, 3, 4])
             ->where('pendiente_total', '>', 0)
             ->where('estado', 1)
             ->where('despachado', 2);

@@ -101,7 +101,7 @@
                                                     v-else-if="(m.metodo_pago == 3 || m.metodo_pago == 4) && m.pendiente_total > 0 && m.pagado_total > 0"
                                                     class="badge badge-warning">PENDIENTE</span>
                                                 <span v-else-if="m.pendiente_total == 0" class="badge badge-success">PAGADO</span>
-                                                <span v-else class="badge badge-dark">PENDIENTE</span>
+                                                <span v-else class="badge badge-warning">PENDIENTE</span>
                                             </td>
                                             <td>
                                                 {{ m . pendiente_total }}
@@ -305,7 +305,7 @@
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="modalCrud">
-                                        Ventas a Crédito de:
+                                        Saldos pendientes de:
                                         <span v-if="clienteActual">
                                             <strong>{{ clienteActual . nombre }}</strong>
                                         </span>

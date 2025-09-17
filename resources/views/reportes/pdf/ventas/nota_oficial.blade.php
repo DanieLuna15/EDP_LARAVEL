@@ -231,7 +231,7 @@
                                     <td align="left" class="border-th border_top">
                                         {{ $de->venta }}
                                     </td>
-                                    <td align="left" class="border-th border_top">{{ sprintf('%0.2f',  $de->peso_neto *  $de->venta ) }}</td>
+                                    <td align="left" class="border-th border_top">{{ sprintf('%0.2f',  $de->total ) }}</td>
 
                                 </tr>
                                 <?php
@@ -392,7 +392,7 @@
                                     <td align="left" class="border-th border_top"  align="center">{{ $de->peso_neto }}</td>
                                     <td align="left" class="border-th border_top"  align="center">
                                         {{ $de->precio }}</td>
-                                    <td align="left" class="border-th border_top" align="center"> {{ sprintf('%0.2f',  $de->peso_neto *  $de->precio ) }}</td>
+                                    <td align="left" class="border-th border_top" align="center"> {{ sprintf('%0.2f',  $de->total) }}</td>
 
                                 </tr>
                                 <?php

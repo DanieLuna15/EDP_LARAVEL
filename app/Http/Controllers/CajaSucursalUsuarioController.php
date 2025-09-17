@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CajaSucursalUsuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class CajaSucursalUsuarioController extends Controller
 {
@@ -28,11 +29,6 @@ class CajaSucursalUsuarioController extends Controller
 
     public function cajaActivaUsuario($user, $sucursal)
     {
-        Log::info('🔍 Buscando caja activa para despacho:', [
-            'user_id' => $user,
-            'sucursal_id' => $sucursal
-        ]);
-
         $cajaActiva = CajaSucursalUsuario::with(['CajaSucursal', 'arqueos'])
             ->where('estado', 1)
             ->where('user_id', $user)
@@ -43,27 +39,39 @@ class CajaSucursalUsuarioController extends Controller
             ->first(function ($item) {
                 return $item->arqueos->contains('apertura', 1);
             });
-
         if ($cajaActiva) {
             $arqueoActivo = $cajaActiva->arqueos->firstWhere('apertura', 1);
-
-            Log::info('✅ Caja activa encontrada para despacho:', [
-                'caja_sucursal_usuario_id' => $cajaActiva->id,
-                'arqueo_activo' => $arqueoActivo ? $arqueoActivo->toArray() : 'No encontrado'
-            ]);
-
-            // Puedes incluir el arqueo activo manualmente si el frontend lo necesita
             $cajaActiva->arqueo_activo = $arqueoActivo;
         } else {
             Log::warning('⚠️ No se encontró caja activa (apertura = 1) para despacho.');
             return response()->json(null);
         }
-
         return response()->json($cajaActiva);
     }
 
-
-
+    public function cajaActivaUsuarioApp()
+    {
+        $user = Auth::user()->id;
+        $sucursal = Auth()->user()->getSellingPointSucursal()->first();
+        $sucursal= $sucursal->id;
+        $cajaActiva = CajaSucursalUsuario::with(['CajaSucursal', 'arqueos'])
+            ->where('estado', 1)
+            ->where('user_id', $user)
+            ->whereHas('CajaSucursal', function ($query) use ($sucursal) {
+                $query->where('sucursal_id', $sucursal);
+            })
+            ->get()
+            ->first(function ($item) {
+                return $item->arqueos->contains('apertura', 1);
+            });
+        if ($cajaActiva) {
+            $arqueoActivo = $cajaActiva->arqueos->firstWhere('apertura', 1);
+            $cajaActiva->arqueo_activo = $arqueoActivo;
+        } else {
+            return response()->json(null);
+        }
+        return response()->json($cajaActiva);
+    }
 
 
     /**

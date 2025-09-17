@@ -298,7 +298,8 @@ class VentaController extends Controller
 
     public function venta2(Request $request)
     {
-        //dd($request->all());
+        // dd($request->all());
+        //dd($request->venta_items);
         try {
             $venta = DB::transaction(function () use ($request) {
 

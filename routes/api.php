@@ -291,6 +291,7 @@ use Illuminate\Support\Facades\Route;
     Route::post('pollolimpio-cambios', 'PollolimpioController@precios');
     Route::get('cajas-usuario/{user}-{sucursal}', 'CajaSucursalUsuarioController@listaUsers');
     Route::get('caja-activa-usuario/{user}/{sucursal}', 'CajaSucursalUsuarioController@cajaActivaUsuario');
+    Route::get('caja-activa-usuario-app', 'CajaSucursalUsuarioController@cajaActivaUsuarioApp');
     Route::get('items-sucursal/{sucursal}', 'ItemController@listaSucursal');
     Route::get('pollo-sucursal/{sucursal}', 'PolloSucursalController@listaSucursal');
     Route::get('producto-precios-sucursal/{sucursal}', 'ProductoPrecioController@listaSucursal');

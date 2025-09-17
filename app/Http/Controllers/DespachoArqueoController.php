@@ -370,7 +370,7 @@ class DespachoArqueoController extends Controller
         }
 
         $ventasCredito = $cliente->Ventas()
-            ->whereIn('metodo_pago', [2, 3])
+            ->whereIn('metodo_pago', [2, 3, 4])
             ->where('pendiente_total', '>', 0)
             ->where('estado', 1)
             ->where('despachado', 2)
@@ -378,7 +378,6 @@ class DespachoArqueoController extends Controller
 
         return response()->json($ventasCredito);
     }
-
 
     /**
      * Update the specified resource in storage.

@@ -43,7 +43,8 @@
                                 </div>
                                 <div class="text-muted small">{{ m . fecha }} {{ m . hora }} </div>
                                 <span class="badge bg-info text-white me-1" v-if="m.metodo_pago==1">Contado</span>
-                                <span class="badge bg-purple text-white me-1" v-else-if="m.metodo_pago == 2">Crédito</span>
+                                <span class="badge bg-dark text-white me-1" v-if="m.metodo_pago==2">Pago Parcial</span>
+                                <span class="badge bg-purple text-white me-1" v-else-if="m.metodo_pago == 3">Crédito</span>
                                 <span class="badge bg-warning text-white me-1" v-else>Crédito E.</span>
                                 <span class="badge bg-orange text-white" v-if="m.despachado==1"><i class="bi bi-x"></i>
                                     S/Desp.</span>
@@ -57,7 +58,7 @@
                                     Bs./{{ m . total }}
                                 </div>
                                 <button
-                                    v-if="m.despachado == 1 || m.metodo_pago == 2 || m.metodo_pago == 3 && m.pendiente_total > 0"
+                                    v-if="( m.metodo_pago == 1 || m.metodo_pago == 2 || m.metodo_pago == 3 || m.metodo_pago == 4 || m.despachado == 1)  && m.pendiente_total > 0"
                                     class="btn btn-success btn-sm mt-1" @click="SelectVenta(m)"><i class="bi bi-truck"></i>
                                     Desp./Cobrar</button>
                                 <a :href="m.url_3_pdf" target="_blank" class="btn btn-danger btn-sm mt-1"><i
@@ -74,7 +75,7 @@
                         <div class="modal-content rounded-4">
                             <div class="modal-header bg-info text-white">
                                 <h5 class="modal-title" id="modalCrud">
-                                    Ventas a Crédito de:
+                                    Saldos pendientes de:
                                     <span v-if="clienteActual">
                                         <strong>{{ clienteActual . nombre }}</strong>
                                     </span>
@@ -141,12 +142,12 @@
                                 <button class="btn btn-danger"
                                     style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-right: 5px;"
                                     @click="ShowModalGlobal = false">
-                                    <i class="bi bi-x-circle"></i> Cancelar
+                                        <i class="bi bi-x-circle"></i> Cancelar
                                 </button>
                                 <button type="button" class="btn btn-success"
                                     style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-left: 5px;"
-                                    @click="confirmarPago" :disabled="loadingButton.cobrar || showCreditoError"><i
-                                        class="bi bi-check-circle"></i>
+                                    @click="confirmarPago" :disabled="loadingButton.cobrar || showCreditoError">
+                                        <i class="bi bi-check-circle"></i>
                                     <span v-if="loadingButton.cobrar">Procesando...</span>
                                     <span v-else>Confirmar Pago</span>
                                 </button>
@@ -207,27 +208,20 @@
                                     </div>
                                     <!-- Tipo de Venta -->
                                     <div class="col-6">
-                                        <label class="form-label fw-bold">TIPO DE VENTA</label>
-                                        <select class="form-control form-control-lg" v-model="venta.metodo_pago" disabled>
-                                            <option value="3">Credito Entrega</option>
-                                            <option value="2">Crédito</option>
-                                            <option value="1">Contado</option>
+                                        <label class="form-label fw-bold">MÉTODO DE PAGO</label>
+                                        <select class="form-control form-control-lg" v-model="venta.metodo_pago">
+                                            <option v-for="m in tipopagos" :key="m.id" :value="m.id">
+                                                {{ m . name }}</option>
                                         </select>
                                     </div>
                                     <div class="col-6">
                                         <div class="form-group">
                                             <label for="entregado" class="custom-checkbox-label">
-                                            Entregado
-                                            <input
-                                                type="checkbox"
-                                                id="entregado"
-                                                v-model="despacho.entregado"
-                                                :true-value="2"
-                                                :false-value="0"
-                                                :checked="Number(venta.entregado) === 2"
-                                                :disabled="Number(venta.entregado) === 2"
-                                                class="custom-checkbox"
-                                            />
+                                                Entregado
+                                                <input type="checkbox" id="entregado" v-model="despacho.entregado"
+                                                    :true-value="2" :false-value="0"
+                                                    :checked="Number(venta.entregado) === 2"
+                                                    :disabled="Number(venta.entregado) === 2" class="custom-checkbox" />
                                             </label>
                                         </div>
                                     </div>
@@ -241,9 +235,9 @@
 
                                     <div class="col-6">
                                         <label class="form-label fw-bold">MONTO</label>
-                                        <input type="text" readonly class="form-control form-control-lg"
+                                        <input type="text" disabled class="form-control form-control-lg"
                                             :value="venta.metodo_pago == 1 ? despacho.monto : venta.pendiente_total"
-                                            :disabled="venta.metodo_pago == 2" @input="onMontoInput($event)">
+                                            :disabled="venta.metodo_pago == 3" @input="onMontoInput($event)">
                                     </div>
 
                                     <div class="col-6">
@@ -257,20 +251,21 @@
                                         <h4 class="text-success fs-4"><strong>Bs./{{ cambio }}</strong></h4>
                                     </div>
 
-                            </div>
-                            <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
-                                <button class="btn btn-danger"
-                                    style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-right: 5px;"
-                                    @click="showModal = false">
-                                    <i class="bi bi-x-circle"></i> Cancelar
-                                </button>
-                                <button class="btn btn-success"
-                                    style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-left: 5px;"
-                                    @click="Save" :disabled="loadingButton.save">
-                                    <i class="bi bi-check-circle"></i>
-                                    <span v-if="loadingButton.save">Guardando...</span>
-                                    <span v-else>Guardar</span>
-                                </button>
+                                </div>
+                                <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
+                                    <button class="btn btn-danger"
+                                        style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-right: 5px;"
+                                        @click="showModal = false">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </button>
+                                    <button class="btn btn-success"
+                                        style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-left: 5px;"
+                                        @click="Save" :disabled="loadingButton.save">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span v-if="loadingButton.save">Guardando...</span>
+                                        <span v-else>Guardar</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -290,9 +285,7 @@
                                     style="max-height: 150px;">
                                 <p><strong>No puedes continuar hasta abrir una.</strong></p>
                                 <button class="btn btn-success" @click="abrirModalCaja">Abrir Caja</button>
-                                <a href="{{ url('/') }}" class="btn btn-success">
-                                    <i class="flaticon-home"></i> Menú Principal
-                                </a>
+                                <button class="btn btn-success" @click="goHome">Volver al Menú Principal</button>
                             </div>
                         </div>
                     </div>
@@ -323,436 +316,126 @@
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button class="btn btn-danger" @click="cerrarModalCaja">Cancelar</button>
-                                <button class="btn btn-success" @click="AbrirCajaDesdeVista">Abrir Caja</button>
+                                <button class="btn btn-danger" style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-right: 5px;" @click="cerrarModalCaja"><i class="bi bi-x-circle"></i>Cancelar</button>
+                                <button class="btn btn-success" style="flex: 1; padding: 15px 0; font-size: 18px; font-weight: bold; border-radius: 8px; margin-left: 5px;" @click="AbrirCajaDesdeVista"><i class="bi bi-x-circle"></i>Abrir Caja</button>
                             </div>
                         </div>
                     </div>
                 </div>
+            @endverbatim
+        @endslot
 
-
-            </div>
-        @endverbatim
-    @endslot
-
-    @slot('script')
-        <script type="module">
-            import Block from "{{ asset('config/block.js') }}"
-            const {
-                createApp
-            } = Vue
-            let block = new Block()
-            createApp({
-                data() {
-                    return {
-                        loadingButton: {
-                            save: false,
-                            cobrar: false,
-                            consultar: false,
+        @slot('script')
+            <script type="module">
+                import Block from "{{ asset('config/block.js') }}"
+                const {
+                    createApp
+                } = Vue
+                let block = new Block()
+                createApp({
+                    data() {
+                        return {
+                            loadingButton: {
+                                save: false,
+                                cobrar: false,
+                                consultar: false,
+                            },
+                            loading: true,
+                            data: [],
+                            fecha_inicio: '',
+                            fecha_fin: '',
+                            clientes: [],
+                            cliente_id: '',
+                            arqueo: {},
+                            user: {},
+                            sucursal: {},
+                            formapagos: [],
+                            despacho: {
+                                formapago_id: 1,
+                                pago_con: 0,
+                                monto: 0,
+                                cajas_entregar: 0
+                            },
+                            venta: {},
+                            showModal: false,
+                            cliente_nombre: '',
+                            resultados: [],
+                            ShowModalCaja: false,
+                            model: {
+                                name: '',
+                                sucursal_id: 1,
+                                monto_inicial: 0,
+                                caja_sucursal_usuario_id: '',
+                            },
+                            abriendoCaja: false,
+                            imageSrc: "{{ asset('/img/pos_caja.png') }}",
+                            cajas: [],
+                            ventasCreditoCliente: [],
+                            ventasSeleccionadas: [],
+                            totalPagar: 0,
+                            totalPagarEditable: 0,
+                            formapagoGlobal: 1,
+                            clienteActual: null,
+                            showCreditoError: false,
+                            ShowModalGlobal: false,
+                            tipopagos: [],
+                        }
+                    },
+                    computed: {
+                        isDarkMode() {
+                            return document.body.classList.contains('dark') || localStorage.getItem('mode') === 'dark';
                         },
-                        loading: true,
-                        data: [],
-                        fecha_inicio: '',
-                        fecha_fin: '',
-                        clientes: [],
-                        cliente_id: '',
-                        arqueo: {},
-                        user: {},
-                        sucursal: {},
-                        formapagos: [],
-                        despacho: {
-                            formapago_id: 1,
-                            pago_con: 0,
-                            monto: 0,
-                            cajas_entregar: 0
+                        cambio() {
+                            let montoPagar = this.venta.metodo_pago == 1 ?
+                                Number(this.despacho.monto) :
+                                Number(this.venta.pendiente_total);
+
+                            let pagoCon = Number(this.despacho.pago_con);
+
+                            if (!pagoCon || isNaN(pagoCon) || pagoCon < montoPagar) {
+                                return '0.00';
+                            }
+                            return (pagoCon - montoPagar).toFixed(2);
+                        }
+                    },
+                    methods: {
+                        goHome() {
+                            window.location.href = '/preventista/home';
                         },
-                        venta: {},
-                        showModal: false,
-                        cliente_nombre: '',
-                        resultados: [],
-                        ShowModalCaja: false,
-                        model: {
-                            name: '',
-                            sucursal_id: 1,
-                            monto_inicial: 0,
-                            caja_sucursal_usuario_id: '',
+                        hoyEnZona(timeZone = 'America/La_Paz') {
+                            const dtf = new Intl.DateTimeFormat('en-CA', {
+                                timeZone,
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            });
+                            const p = dtf.formatToParts(new Date());
+                            return `${p.find(x=>x.type==='year').value}-${p.find(x=>x.type==='month').value}-${p.find(x=>x.type==='day').value}`;
                         },
-                        abriendoCaja: false,
-                        imageSrc: "{{ asset('/img/pos_caja.png') }}",
-                        cajas: [],
-                        ventasCreditoCliente: [],
-                        ventasSeleccionadas: [],
-                        totalPagar: 0,
-                        totalPagarEditable: 0,
-                        formapagoGlobal: 1,
-                        clienteActual: null,
-                        showCreditoError: false,
-                        ShowModalGlobal: false,
-                    }
-                },
-                computed: {
-                    isDarkMode() {
-                        return document.body.classList.contains('dark') || localStorage.getItem('mode') === 'dark';
-                    },
-                    cambio() {
-                        let montoPagar = this.venta.metodo_pago == 1 ?
-                            Number(this.despacho.monto) :
-                            Number(this.venta.pendiente_total);
+                        actualizarSuma() {
+                            let total = this.ventasSeleccionadas.reduce((total, ventaId) => {
+                                const venta = this.ventasCreditoCliente.find(v => v.id === ventaId);
+                                if (venta) {
+                                    return total + parseFloat(venta.pendiente_total);
+                                }
+                                return total;
+                            }, 0);
+                            this.totalPagar = total.toFixed(2);
+                            this.totalPagarEditable = this.totalPagar;
+                        },
 
-                        let pagoCon = Number(this.despacho.pago_con);
+                        async abrirModalVentasCredito(cliente) {
+                            this.clienteActual = cliente;
+                            this.ShowModalGlobal = true;
+                            let response = await axios.get(`/api/ventas-credito/${cliente.id}`);
+                            this.ventasCreditoCliente = response.data;
+                            this.ventasSeleccionadas = this.ventasCreditoCliente.map(venta => venta.id);
+                            this.actualizarSuma();
+                            this.showCreditoError = (this.ventasCreditoCliente.length === 0);
+                        },
 
-                        if (!pagoCon || isNaN(pagoCon) || pagoCon < montoPagar) {
-                            return '0.00';
-                        }
-                        return (pagoCon - montoPagar).toFixed(2);
-                    }
-                },
-                methods: {
-                    hoyEnZona(timeZone = 'America/La_Paz') {
-                        const dtf = new Intl.DateTimeFormat('en-CA', {
-                            timeZone,
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                        });
-                        const p = dtf.formatToParts(new Date());
-                        return `${p.find(x=>x.type==='year').value}-${p.find(x=>x.type==='month').value}-${p.find(x=>x.type==='day').value}`;
-                    },
-                    actualizarSuma() {
-                        let total = this.ventasSeleccionadas.reduce((total, ventaId) => {
-                            const venta = this.ventasCreditoCliente.find(v => v.id === ventaId);
-                            if (venta) {
-                                return total + parseFloat(venta.pendiente_total);
-                            }
-                            return total;
-                        }, 0);
-                        this.totalPagar = total.toFixed(2);
-                        this.totalPagarEditable = this.totalPagar;
-                    },
-
-                    async abrirModalVentasCredito(cliente) {
-                        this.clienteActual = cliente;
-                        this.ShowModalGlobal = true;
-                        let response = await axios.get(`/api/ventas-credito/${cliente.id}`);
-                        this.ventasCreditoCliente = response.data;
-                        this.ventasSeleccionadas = this.ventasCreditoCliente.map(venta => venta.id);
-                        this.actualizarSuma();
-                        this.showCreditoError = (this.ventasCreditoCliente.length === 0);
-                    },
-
-                    async confirmarPago() {
-                        if (this.loadingButton.cobrar) return;
-                        if (!this.arqueo || !this.arqueo.id) {
-                            return swal.fire({
-                                title: 'Error',
-                                text: 'No se encontró una caja activa abierta para despachar.',
-                                type: 'warning',
-                                confirmButtonText: 'Aceptar',
-                                confirmButtonClass: 'btn btn-danger',
-                            });
-                        }
-                        if (this.totalPagarEditable <= 0 || this.ventasSeleccionadas.length === 0) {
-                            return swal.fire('Error',
-                                'El monto de pago debe ser mayor que cero, al menos debe seleccionar una venta',
-                                'error');
-                        }
-                        if (!this.formapagoGlobal) {
-                            return swal.fire('Error', 'Debes seleccionar una forma de pago para continuar',
-                                'error');
-                        }
-                        this.loadingButton.cobrar = true;
-                        this.despacho.arqueo = this.arqueo;
-                        try {
-                            let res = await axios.post('/api/pagar-venta', {
-                                ventaIds: this.ventasSeleccionadas,
-                                monto: this.totalPagarEditable,
-                                despacho: this.despacho,
-                                formapago_id: this.formapagoGlobal
-                            });
-
-                            if (res.data.success) {
-                                const swalWithBootstrapButtons = swal.mixin({
-                                    confirmButtonClass: 'btn btn-success btn-rounded',
-                                    cancelButtonClass: 'btn btn-danger btn-rounded mr-3',
-                                    buttonsStyling: false,
-                                });
-                                swalWithBootstrapButtons({
-                                    title: 'Pago Realizado',
-                                    text: res.data.message || 'El pago ha sido registrado exitosamente',
-                                    type: 'success',
-                                    showCancelButton: true,
-                                    confirmButtonText: 'Abrir PDF',
-                                    cancelButtonText: 'Aceptar',
-                                    reverseButtons: true,
-                                    padding: '2em',
-                                }).then(async (result) => {
-                                    if (result.value) {
-                                        try {
-                                            if (res.data.url_pdf_cobranza) {
-                                                window.open(res.data.url_pdf_cobranza, '_blank');
-                                            }
-                                            this.ConsultarFecha();
-                                        } catch (e) {
-                                            console.error('Error al abrir el PDF', e);
-                                        }
-                                    } else {
-                                        this.ConsultarFecha();
-                                    }
-                                });
-                                this.ventasCreditoCliente = this.ventasCreditoCliente.filter(
-                                    venta => !this.ventasSeleccionadas.includes(venta.id)
-                                );
-                                this.totalPagar = 0;
-                                this.ventasSeleccionadas = [];
-                            } else {
-                                swal.fire('Error', 'Hubo un problema al procesar el pago', 'error');
-                                this.ConsultarFecha();
-                            }
-                        } catch (error) {
-                            swal.fire('Error', 'Ocurrió un error en la comunicación con el servidor', 'error');
-                        } finally {
-                            this.loadingButton.cobrar = false;
-                            this.ShowModalGlobal = false; // Cierra el modal
-                        }
-                    },
-
-                    onMontoInput(e) {
-                        if (this.venta.metodo_pago == 1) {
-                            this.despacho.monto = e.target.value;
-                        }
-                    },
-
-                    abrirModalCaja() {
-                        $('#modalAperturaCaja').modal('show');
-                    },
-                    cerrarModalCaja() {
-                        $('#modalAperturaCaja').modal('hide');
-                    },
-
-                    async AbrirCajaDesdeVista() {
-                        const self = this;
-                        this.model.user_id = this.user.id;
-                        this.model.sucursal_id = this.sucursal.id;
-
-                        if (!this.model.caja_sucursal_usuario_id) {
-                            Swal.fire({
-                                type: 'warning',
-                                title: 'Atención',
-                                text: 'Por favor selecciona una caja para continuar.',
-                                confirmButtonText: 'Aceptar',
-                            });
-                            return;
-                        }
-                        this.abriendoCaja = true;
-                        try {
-                            let res = await axios.post("{{ url('api/arqueos') }}", this.model);
-                            if (res.data) {
-                                Swal.fire({
-                                    type: 'success',
-                                    title: 'Caja Aperturada',
-                                    text: 'La caja fue aperturada correctamente.',
-                                    confirmButtonText: 'OK'
-                                });
-
-                                $('#modalBloqueoCaja').modal('hide');
-                                $('#modalAperturaCaja').modal('hide');
-                                await self.checkCajaActiva();
-                            }
-                        } catch (error) {
-                            console.error('Error al aperturar la caja:', error);
-                            Swal.fire({
-                                type: 'error',
-                                title: 'Error',
-                                text: 'No se pudo aperturar la caja. Intenta nuevamente.',
-                            });
-                        }
-                    },
-                    buscarClientes() {
-                        if (this.cliente_nombre.length < 2) {
-                            this.resultados = [];
-                            return;
-                        }
-                        axios.get(`{{ url('api/filtrarClientes') }}`, {
-                            params: {
-                                q: this.cliente_nombre
-                            }
-                        }).then(res => {
-                            this.resultados = res.data;
-                        });
-                    },
-
-                    seleccionarCliente(cliente) {
-                        this.cliente_id = cliente.id;
-                        this.cliente_nombre = cliente.nombre + ' ' + cliente.documento.name + ' ' + cliente.doc;
-                        this.resultados = [];
-                    },
-                    limpiarCliente() {
-                        this.cliente_id = null;
-                        this.cliente_nombre = '';
-                        this.resultados = [];
-                    },
-                    async load() {
-                        this.loading = true;
-
-                        let self = this;
-                        try {
-                            let user = JSON.parse(localStorage.getItem('AppUser'));
-                            let sucursal = JSON.parse(localStorage.getItem('AppSucursal'));
-                            self.user = user;
-                            self.sucursal = sucursal;
-
-                            await Promise.all([
-                                self.GET_DATA("{{ url('api/caja-activa-usuario') }}/" + self.user.id +
-                                    '/' + self.sucursal.id),
-                                self.GET_DATA("{{ url('api/cajas-usuario') }}/" + self.user.id + '-' + self
-                                    .sucursal.id),
-                                self.GET_DATA("{{ url('api/formapagos') }}")
-                            ]).then(([arqueo, cajas, formapagos]) => {
-                                self.arqueo = arqueo;
-                                self.cajas = cajas;
-                                self.formapagos = formapagos;
-                            });
-                        } catch (e) {
-                            self.arqueo = {};
-                            console.error('Error al cargar los datos:', e);
-                        } finally {
-                            this.loading = false;
-                            const loader = document.querySelector('.loader-overlay');
-                            if (loader && this.loading == false) {
-                                loader.style.display = 'none';
-                            }
-                        }
-                    },
-
-                    async checkCajaActiva() {
-                        if (!this.user || !this.sucursal) {
-                            console.error("No se encontraron los datos de usuario o sucursal.");
-                            return;
-                        }
-                        try {
-                            let res = await axios.get("{{ url('api/caja-activa-usuario') }}/" + this.user.id +
-                                '/' + this.sucursal.id);
-
-                            if (res.data && res.data.id) {
-                                console.log("Caja activa encontrada:", res.data);
-                                this.arqueo = res.data;
-                                $('#modalBloqueoCaja').modal('hide');
-                            } else {
-                                console.log("No hay caja activa.");
-                                $('#modalBloqueoCaja').modal('show');
-                            }
-                        } catch (e) {
-                            console.error('Error al validar caja activa', e);
-                            $('#modalBloqueoCaja').modal('show');
-                        }
-                    },
-
-                    async GET_DATA(path) {
-                        try {
-                            let res = await axios.get(path);
-                            return res.data;
-                        } catch (e) {
-                            console.error('Error al obtener datos', e);
-                        }
-                    },
-                    async ConsultarFecha() {
-                        if (this.loadingButton.consultar) return;
-                        if (!this.fecha_inicio || !this.fecha_fin) {
-                            swal.fire('Atención', 'Por favor selecciona ambas fechas', 'warning');
-                            return;
-                        }
-                        if (!this.cliente_id) {
-                            swal.fire('Atención', 'Por favor selecciona un cliente', 'warning');
-                            return;
-                        }
-
-                        let user = JSON.parse(localStorage.getItem('AppUser'));
-                        if (!user) {
-                            swal.fire('Atención', 'No se pudo obtener la información del usuario', 'warning');
-                            return;
-                        }
-                        let userId = user.id;
-
-                        this.loadingButton.consultar = true;
-                        block.block();
-                        try {
-                            let res = await axios.post("{{ url('api/entregasFechaCliente') }}", {
-                                fecha_inicio: this.fecha_inicio,
-                                fecha_fin: this.fecha_fin,
-                                cliente_id: this.cliente_id,
-                                user_id: userId
-                            });
-                            this.data = res.data.reverse();
-                        } finally {
-                            block.unblock();
-                            this.loadingButton.consultar = false;
-                        }
-                    },
-                    SelectVenta(venta) {
-                        this.venta = venta;
-                        this.showModal = true;
-                        const entregadoNum = Number(venta.entregado);
-                        this.despacho.entregado = (entregadoNum === 2) ? 2 : 0;
-                        this.despacho = {
-                            formapago_id: 1,
-                            pago_con: 0,
-                            monto: (venta.venta_pago == 1) ? 0 : venta.total,
-                            cajas_entregar: 0
-                        };
-                        this.$nextTick(() => {
-                            this.despacho.entregado = (entregadoNum === 2) ? 2 : 0;
-                        });
-                    },
-
-                    async Save() {
-                        if (this.loadingButton.save) return;
-                        this.loadingButton.save = true;
-                        const despachoData = {
-                            ...this.despacho,
-                            entregado: this.despacho.entregado // Pasar el valor de entregado
-                        };
-
-                        try {
-                            if (
-                                this.venta.metodo_pago == 3 &&
-                                this.venta.despachado == 1 &&
-                                this.venta.cliente.otras_pendientes_credito < 0
-                            ) {
-                                return swal.fire({
-                                    title: 'Advertencia',
-                                    text: 'El cliente ya tiene otra venta a crédito con saldo pendiente. No se puede despachar una nueva entrega.',
-                                    type: 'warning',
-                                    confirmButtonText: 'Aceptar'
-                                });
-                            }
-                            const pendienteTotal = Number(this.venta.pendiente_total);
-                            const pagoCon = Number(this.despacho.pago_con);
-
-
-                            if (
-                                this.venta.metodo_pago == 1 &&
-                                pendienteTotal > pagoCon
-                            ) {
-                                await swal.fire({
-                                    title: 'Advertencia',
-                                    text: 'El monto a pagar no puede ser menor al total pendiente en ventas al CONTADO',
-                                    type: 'warning',
-                                    confirmButtonText: 'Aceptar'
-                                });
-                                return;
-                            }
-
-                            if (
-                                this.despacho.entregado != 2
-                            ){
-                                await swal.fire({
-                                    title: 'Advertencia',
-                                    text: 'Debe marcar la venta como entregado',
-                                    type: 'warning',
-                                    confirmButtonText: 'Aceptar'
-                                });
-                                return;
-                            }
+                        async confirmarPago() {
+                            if (this.loadingButton.cobrar) return;
                             if (!this.arqueo || !this.arqueo.id) {
                                 return swal.fire({
                                     title: 'Error',
@@ -762,16 +445,329 @@
                                     confirmButtonClass: 'btn btn-danger',
                                 });
                             }
+                            if (this.totalPagarEditable <= 0 || this.ventasSeleccionadas.length === 0) {
+                                return swal.fire('Error',
+                                    'El monto de pago debe ser mayor que cero, al menos debe seleccionar una venta',
+                                    'error');
+                            }
+                            if (!this.formapagoGlobal) {
+                                return swal.fire('Error', 'Debes seleccionar una forma de pago para continuar',
+                                    'error');
+                            }
+                            this.loadingButton.cobrar = true;
                             this.despacho.arqueo = this.arqueo;
-                            this.despacho.venta = this.venta;
-                            let res = await axios.post("{{ url('api/entregas-venta') }}", this.despacho);
-                            if (res.data.url_pdf_cobranza && res.data.url_pdf_cajas) {
-                                this.ConsultarFecha();
-                                this.showModal = false;
-                                swal.fire({
-                                    title: 'Venta despachada correctamente',
-                                    type: 'success',
-                                    html: `
+                            try {
+                                let res = await axios.post('/api/pagar-venta', {
+                                    ventaIds: this.ventasSeleccionadas,
+                                    monto: this.totalPagarEditable,
+                                    despacho: this.despacho,
+                                    formapago_id: this.formapagoGlobal
+                                });
+
+                                if (res.data.success) {
+                                    const swalWithBootstrapButtons = swal.mixin({
+                                        confirmButtonClass: 'btn btn-success btn-rounded',
+                                        cancelButtonClass: 'btn btn-danger btn-rounded mr-3',
+                                        buttonsStyling: false,
+                                    });
+                                    swalWithBootstrapButtons({
+                                        title: 'Pago Realizado',
+                                        text: res.data.message || 'El pago ha sido registrado exitosamente',
+                                        type: 'success',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Abrir PDF',
+                                        cancelButtonText: 'Aceptar',
+                                        reverseButtons: true,
+                                        padding: '2em',
+                                    }).then(async (result) => {
+                                        if (result.value) {
+                                            try {
+                                                if (res.data.url_pdf_cobranza) {
+                                                    window.open(res.data.url_pdf_cobranza, '_blank');
+                                                }
+                                                this.ConsultarFecha();
+                                            } catch (e) {
+                                                console.error('Error al abrir el PDF', e);
+                                            }
+                                        } else {
+                                            this.ConsultarFecha();
+                                        }
+                                    });
+                                    this.ventasCreditoCliente = this.ventasCreditoCliente.filter(
+                                        venta => !this.ventasSeleccionadas.includes(venta.id)
+                                    );
+                                    this.totalPagar = 0;
+                                    this.ventasSeleccionadas = [];
+                                } else {
+                                    swal.fire('Error', 'Hubo un problema al procesar el pago', 'error');
+                                    this.ConsultarFecha();
+                                }
+                            } catch (error) {
+                                swal.fire('Error', 'Ocurrió un error en la comunicación con el servidor', 'error');
+                            } finally {
+                                this.loadingButton.cobrar = false;
+                                this.ShowModalGlobal = false;
+                            }
+                        },
+
+                        onMontoInput(e) {
+                            if (this.venta.metodo_pago == 1) {
+                                this.despacho.monto = e.target.value;
+                            }
+                        },
+
+                        abrirModalCaja() {
+                            $('#modalAperturaCaja').modal('show');
+                        },
+                        cerrarModalCaja() {
+                            $('#modalAperturaCaja').modal('hide');
+                        },
+
+                        async AbrirCajaDesdeVista() {
+                            const self = this;
+                            this.model.user_id = this.user.id;
+                            this.model.sucursal_id = this.sucursal.id;
+
+                            if (!this.model.caja_sucursal_usuario_id) {
+                                Swal.fire({
+                                    type: 'warning',
+                                    title: 'Atención',
+                                    text: 'Por favor selecciona una caja para continuar.',
+                                    confirmButtonText: 'Aceptar',
+                                });
+                                return;
+                            }
+                            this.abriendoCaja = true;
+                            try {
+                                let res = await axios.post("{{ url('api/arqueos') }}", this.model);
+                                if (res.data) {
+                                    Swal.fire({
+                                        type: 'success',
+                                        title: 'Caja Aperturada',
+                                        text: 'La caja fue aperturada correctamente.',
+                                        confirmButtonText: 'OK'
+                                    });
+
+                                    $('#modalBloqueoCaja').modal('hide');
+                                    $('#modalAperturaCaja').modal('hide');
+                                    await self.checkCajaActiva();
+                                }
+                            } catch (error) {
+                                console.error('Error al aperturar la caja:', error);
+                                Swal.fire({
+                                    type: 'error',
+                                    title: 'Error',
+                                    text: 'No se pudo aperturar la caja. Intenta nuevamente.',
+                                });
+                            }
+                        },
+                        buscarClientes() {
+                            if (this.cliente_nombre.length < 2) {
+                                this.resultados = [];
+                                return;
+                            }
+                            axios.get(`{{ url('api/filtrarClientes') }}`, {
+                                params: {
+                                    q: this.cliente_nombre
+                                }
+                            }).then(res => {
+                                this.resultados = res.data;
+                            });
+                        },
+
+                        seleccionarCliente(cliente) {
+                            this.cliente_id = cliente.id;
+                            this.cliente_nombre = cliente.nombre + ' ' + cliente.documento.name + ' ' + cliente.doc;
+                            this.resultados = [];
+                        },
+                        limpiarCliente() {
+                            this.cliente_id = null;
+                            this.cliente_nombre = '';
+                            this.resultados = [];
+                        },
+                        async load() {
+                            this.loading = true;
+
+                            let self = this;
+                            try {
+                                let user = JSON.parse(localStorage.getItem('AppUser'));
+                                let sucursal = JSON.parse(localStorage.getItem('AppSucursal'));
+                                self.user = user;
+                                self.sucursal = sucursal;
+
+                                await Promise.all([
+                                    self.GET_DATA("{{ url('api/caja-activa-usuario') }}/" + self.user.id +
+                                        '/' + self.sucursal.id),
+                                    self.GET_DATA("{{ url('api/cajas-usuario') }}/" + self.user.id + '-' + self
+                                        .sucursal.id),
+                                    self.GET_DATA("{{ url('api/formapagos') }}"),
+                                    self.GET_DATA("{{ url('api/tipopagos') }}"),
+                                ]).then(([arqueo, cajas, formapagos, tipopagos]) => {
+                                    self.arqueo = arqueo;
+                                    self.cajas = cajas;
+                                    self.formapagos = formapagos;
+                                    self.tipopagos = tipopagos || [];
+                                });
+                            } catch (e) {
+                                self.arqueo = {};
+                                console.error('Error al cargar los datos:', e);
+                            } finally {
+                                this.loading = false;
+                                const loader = document.querySelector('.loader-overlay');
+                                if (loader && this.loading == false) {
+                                    loader.style.display = 'none';
+                                }
+                            }
+                        },
+
+                        async checkCajaActiva() {
+                            if (!this.user || !this.sucursal) {
+                                console.error("No se encontraron los datos de usuario o sucursal.");
+                                return;
+                            }
+                            try {
+                                let res = await axios.get("{{ url('api/caja-activa-usuario-app') }}");
+                                if (res.data && res.data.id) {
+                                    console.log("Caja activa encontrada:", res.data);
+                                    this.arqueo = res.data;
+                                    $('#modalBloqueoCaja').modal('hide');
+                                } else {
+                                    console.log("No hay caja activa.");
+                                    $('#modalBloqueoCaja').modal('show');
+                                }
+                            } catch (e) {
+                                console.error('Error al validar caja activa', e);
+                                $('#modalBloqueoCaja').modal('show');
+                            }
+                        },
+
+                        async GET_DATA(path) {
+                            try {
+                                let res = await axios.get(path);
+                                return res.data;
+                            } catch (e) {
+                                console.error('Error al obtener datos', e);
+                            }
+                        },
+                        async ConsultarFecha() {
+                            if (this.loadingButton.consultar) return;
+                            if (!this.fecha_inicio || !this.fecha_fin) {
+                                swal.fire('Atención', 'Por favor selecciona ambas fechas', 'warning');
+                                return;
+                            }
+                            if (!this.cliente_id) {
+                                swal.fire('Atención', 'Por favor selecciona un cliente', 'warning');
+                                return;
+                            }
+
+                            let user = JSON.parse(localStorage.getItem('AppUser'));
+                            if (!user) {
+                                swal.fire('Atención', 'No se pudo obtener la información del usuario', 'warning');
+                                return;
+                            }
+                            let userId = user.id;
+
+                            this.loadingButton.consultar = true;
+                            block.block();
+                            try {
+                                let res = await axios.post("{{ url('api/entregasFechaCliente') }}", {
+                                    fecha_inicio: this.fecha_inicio,
+                                    fecha_fin: this.fecha_fin,
+                                    cliente_id: this.cliente_id,
+                                    user_id: userId
+                                });
+                                this.data = res.data.reverse();
+                            } finally {
+                                block.unblock();
+                                this.loadingButton.consultar = false;
+                            }
+                        },
+                        SelectVenta(venta) {
+                            this.venta = venta;
+                            this.showModal = true;
+                            const entregadoNum = Number(venta.entregado);
+                            this.despacho.entregado = (entregadoNum === 2) ? 2 : 0;
+                            this.despacho = {
+                                formapago_id: 1,
+                                pago_con: 0,
+                                monto: (venta.venta_pago == 1) ? 0 : venta.total,
+                                cajas_entregar: 0
+                            };
+                            this.$nextTick(() => {
+                                this.despacho.entregado = (entregadoNum === 2) ? 2 : 0;
+                            });
+                        },
+
+                        async Save() {
+                            if (this.loadingButton.save) return;
+                            this.loadingButton.save = true;
+                            const despachoData = {
+                                ...this.despacho,
+                                entregado: this.despacho.entregado // Pasar el valor de entregado
+                            };
+
+                            try {
+                                if (
+                                    this.venta.metodo_pago == 4 &&
+                                    this.venta.despachado == 1 &&
+                                    this.venta.cliente.otras_pendientes_credito < 0
+                                ) {
+                                    return swal.fire({
+                                        title: 'Advertencia',
+                                        text: 'El cliente ya tiene otra venta a crédito con saldo pendiente. No se puede despachar una nueva entrega.',
+                                        type: 'warning',
+                                        confirmButtonText: 'Aceptar'
+                                    });
+                                }
+                                const pendienteTotal = Number(this.venta.pendiente_total);
+                                const pagoCon = Number(this.despacho.pago_con);
+
+
+                                if (pagoCon > 0) {
+                                    if (
+                                        this.venta.metodo_pago == 1 &&
+                                        pendienteTotal > pagoCon
+                                    ) {
+                                        await swal.fire({
+                                            title: 'Advertencia',
+                                            text: 'El monto a pagar no puede ser menor al total pendiente en ventas al CONTADO',
+                                            type: 'warning',
+                                            confirmButtonText: 'Aceptar'
+                                        });
+                                        return;
+                                    }
+                                }
+
+                                if (
+                                    this.despacho.entregado != 2
+                                ) {
+                                    await swal.fire({
+                                        title: 'Advertencia',
+                                        text: 'Debe marcar la venta como entregado',
+                                        type: 'warning',
+                                        confirmButtonText: 'Aceptar'
+                                    });
+                                    return;
+                                }
+                                if (!this.arqueo || !this.arqueo.id) {
+                                    return swal.fire({
+                                        title: 'Error',
+                                        text: 'No se encontró una caja activa abierta para despachar.',
+                                        type: 'warning',
+                                        confirmButtonText: 'Aceptar',
+                                        confirmButtonClass: 'btn btn-danger',
+                                    });
+                                }
+                                this.despacho.arqueo = this.arqueo;
+                                this.despacho.venta = this.venta;
+                                let res = await axios.post("{{ url('api/entregas-venta') }}", this.despacho);
+                                if (res.data.url_pdf_cobranza && res.data.url_pdf_cajas) {
+                                    this.ConsultarFecha();
+                                    this.showModal = false;
+                                    swal.fire({
+                                        title: 'Venta despachada correctamente',
+                                        type: 'success',
+                                        html: `
                                 <div class="row g-2">
                                     <div class="col-4">
                                         <a href="${res.data.url_pdf_cobranza}" target="_blank" rel="noopener" class="btn bg-info text-white w-100">
@@ -793,109 +789,109 @@
                                     <button id="btn-cerrar" class="btn btn-danger w-50">Cerrar</button>
                                 </div>
                             `,
-                                    showConfirmButton: false,
-                                    showCancelButton: false,
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: true,
-                                    padding: '2em',
-                                    didOpen: () => {
-                                        document.getElementById('btn-cerrar')?.addEventListener('click',
-                                            (e) => {
+                                        showConfirmButton: false,
+                                        showCancelButton: false,
+                                        allowOutsideClick: false,
+                                        allowEscapeKey: true,
+                                        padding: '2em',
+                                        didOpen: () => {
+                                            document.getElementById('btn-cerrar')?.addEventListener('click',
+                                                (e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    swal.close();
+                                                });
+                                            this.showModal = false;
+                                        },
+                                        onOpen: (el) => {
+                                            el.querySelector('#btn-cerrar')?.addEventListener('click', (
+                                                e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
                                                 swal.close();
                                             });
-                                        this.showModal = false;
-                                    },
-                                    onOpen: (el) => {
-                                        el.querySelector('#btn-cerrar')?.addEventListener('click', (
-                                            e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            swal.close();
-                                        });
-                                    }
-                                });
+                                        }
+                                    });
 
 
-                            } else {
+                                } else {
+                                    swal.fire({
+                                        title: 'Error',
+                                        text: 'No se pudo generar los PDFs de cobranza y cajas.',
+                                        type: 'error',
+                                        confirmButtonText: 'Aceptar',
+                                        confirmButtonClass: 'btn btn-danger',
+                                    });
+                                }
+
+                            } catch (e) {
                                 swal.fire({
                                     title: 'Error',
-                                    text: 'No se pudo generar los PDFs de cobranza y cajas.',
-                                    type: 'error',
+                                    text: 'Ocurrió un error al procesar el despacho.',
+                                    type: 'warning',
                                     confirmButtonText: 'Aceptar',
                                     confirmButtonClass: 'btn btn-danger',
                                 });
+                            } finally {
+                                this.loadingButton.save = false;
                             }
-
-                        } catch (e) {
-                            swal.fire({
-                                title: 'Error',
-                                text: 'Ocurrió un error al procesar el despacho.',
-                                type: 'warning',
-                                confirmButtonText: 'Aceptar',
-                                confirmButtonClass: 'btn btn-danger',
-                            });
-                        } finally {
-                            this.loadingButton.save = false;
-                        }
+                        },
                     },
-                },
-                mounted() {
-                    this.loading = true; // Inicia con loading en true
-                    console.log("Cargando datos...");
+                    mounted() {
+                        this.loading = true; // Inicia con loading en true
+                        console.log("Cargando datos...");
 
-                    document.addEventListener('click', (e) => {
-                        if (!e.target.closest('.position-relative')) {
-                            this.resultados = [];
+                        document.addEventListener('click', (e) => {
+                            if (!e.target.closest('.position-relative')) {
+                                this.resultados = [];
+                            }
+                        });
+
+                        const hoyLP = this.hoyEnZona();
+                        this.fecha_inicio = hoyLP;
+                        this.fecha_fin = hoyLP;
+                        let user = localStorage.getItem('AppUser')
+                        let sucursal = localStorage.getItem('AppSucursal')
+                        if (user) {
+                            self.user = JSON.parse(user)
                         }
-                    });
-
-                    const hoyLP = this.hoyEnZona();
-                    this.fecha_inicio = hoyLP;
-                    this.fecha_fin = hoyLP;
-                    let user = localStorage.getItem('AppUser')
-                    let sucursal = localStorage.getItem('AppSucursal')
-                    if (user) {
-                        self.user = JSON.parse(user)
-                    }
-                    if (sucursal) {
-                        self.sucursal = JSON.parse(sucursal)
-                    }
-                    axios.get("{{ url('api/clientes') }}")
-                        .then(res => {
-                            this.clientes = res.data;
-                            console.log("Clientes cargados", this.clientes);
-                            this.$nextTick(() => {
-                                $(".select_clientes").select2({
-                                    placeholder: "Buscar Cliente",
-                                    width: '100%',
-                                }).on("change", (e) => {
-                                    this.cliente_id = e.target.value;
+                        if (sucursal) {
+                            self.sucursal = JSON.parse(sucursal)
+                        }
+                        axios.get("{{ url('api/clientes') }}")
+                            .then(res => {
+                                this.clientes = res.data;
+                                console.log("Clientes cargados", this.clientes);
+                                this.$nextTick(() => {
+                                    $(".select_clientes").select2({
+                                        placeholder: "Buscar Cliente",
+                                        width: '100%',
+                                    }).on("change", (e) => {
+                                        this.cliente_id = e.target.value;
+                                    });
                                 });
-                            });
-                        })
-                        .catch(() => {
-                            this.clientes = [];
-                        })
-                    this.load();
-                    this.checkCajaActiva();
-                },
-
-
-
-                watch: {
-                    loading(newVal) {
-                        console.log("Nuevo valor de loading:", newVal);
+                            })
+                            .catch(() => {
+                                this.clientes = [];
+                            })
+                        this.load();
+                        this.checkCajaActiva();
                     },
-                    'model.monto_inicial'(newValue) {
-                        console.log("Monto de Apertura actualizado:", newValue);
-                        if (newValue === 0) {
-                            console.log('El valor se ha restablecido a 0');
+
+
+
+                    watch: {
+                        loading(newVal) {
+                            console.log("Nuevo valor de loading:", newVal);
+                        },
+                        'model.monto_inicial'(newValue) {
+                            console.log("Monto de Apertura actualizado:", newValue);
+                            if (newValue === 0) {
+                                console.log('El valor se ha restablecido a 0');
+                            }
                         }
-                    }
-                },
-            }).mount('#appEntrega')
-        </script>
-    @endslot
-@endcomponent
+                    },
+                }).mount('#appEntrega')
+            </script>
+        @endslot
+    @endcomponent
