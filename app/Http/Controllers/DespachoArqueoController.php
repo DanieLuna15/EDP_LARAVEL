@@ -47,6 +47,18 @@ class DespachoArqueoController extends Controller
             }
         }
 
+        $observacionCajas = trim($request->observacion_cajas ?? '');
+        $observacionPago = trim($request->observacion_pago ?? '');
+
+        if ($observacionCajas || $observacionPago) {
+            $venta->observacion = trim(implode(' | ', array_filter([
+                $observacionCajas,
+                $observacionPago
+            ], function ($value) {
+                return $value !== '';
+            })));
+        }
+
         $monto = $venta->pendiente_total;
         if ($venta->pendiente_total > 0) {
             $monto_pagado = $request->pago_con;
@@ -95,6 +107,9 @@ class DespachoArqueoController extends Controller
             $entregaCaja->fecha = date('Y-m-d');
             $entregaCaja->chofer_id = $chofer_id;
             $entregaCaja->venta_id = $venta->id;
+            if ($observacionCajas) {
+                $entregaCaja->observacion = $observacionCajas;
+            }
             $entregaCaja->save();
 
             if ($cajas_recuperadas > 0) {
@@ -142,6 +157,9 @@ class DespachoArqueoController extends Controller
             } else {
                 $arqueoVenta->cambio = 0;
                 $arqueoVenta->monto = $request->pago_con;
+            }
+            if ($observacionPago) {
+                $arqueoVenta->observacion = $observacionPago;
             }
             $arqueoVenta->save();
 

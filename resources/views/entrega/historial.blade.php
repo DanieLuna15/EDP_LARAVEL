@@ -91,7 +91,8 @@
                                             <td>
                                                 <span v-if="(m.metodo_pago == 3 || m.metodo_pago == 4) && m.pagado_total == 0"
                                                     class="badge badge-danger">NO INICIADO AUN</span>
-                                                <span v-else-if="(m.metodo_pago == 1 || m.metodo_pago == 2) && m.pendiente_total == 0"
+                                                <span
+                                                    v-else-if="(m.metodo_pago == 1 || m.metodo_pago == 2) && m.pendiente_total == 0"
                                                     class="badge badge-success">PAGADO</span>
                                                 <span
                                                     v-else-if="(m.metodo_pago == 3 || m.metodo_pago == 4) && m.pendiente_total == 0"
@@ -265,6 +266,23 @@
                                                 </label>
                                             </div>
                                         </div>
+                                        <div class="col-12" v-if="Number(despacho.cajas_entregar) > 0">
+                                            <div class="form-group">
+                                                <label for="">Observaciones de Cajas</label>
+                                                <textarea class="form-control" rows="2"
+                                                    v-model="despacho.observacion_cajas"
+                                                    placeholder="Detalle devoluciones o incidencias de cajas"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-12" v-if="Number(despacho.pago_con) > 0">
+                                            <div class="form-group">
+                                                <label for="">Observaciones del Pago</label>
+                                                <textarea class="form-control" rows="2"
+                                                    v-model="despacho.observacion_pago"
+                                                    placeholder="Notas adicionales sobre el cobro"></textarea>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -494,7 +512,9 @@
                             pago_con: 0,
                             monto: 0,
                             cambio: 0,
-                            cajas_entregar: 0
+                            cajas_entregar: 0,
+                            observacion_cajas: '',
+                            observacion_pago: ''
                         },
                         ventasCreditoCliente: [],
                         ventasSeleccionadas: [],
@@ -571,7 +591,7 @@
                         }
                         if (!this.formapagoGlobal) {
                             return swal.fire('Error', 'Debes seleccionar una forma de pago para continuar',
-                            'error');
+                                'error');
                         }
                         this.despacho.arqueo = this.arqueo;
                         try {
@@ -681,6 +701,8 @@
 
                         const entregadoNum = Number(venta.entregado);
                         this.despacho.entregado = (entregadoNum === 2) ? 2 : 0;
+                        this.despacho.observacion_cajas = '';
+                        this.despacho.observacion_pago = '';
                         if (this.venta.venta_pago == 1) {
                             this.despacho.monto = 0
                         } else {
@@ -696,6 +718,8 @@
                             monto: Number(this.despacho.monto || 0),
                             pago_con: Number(this.despacho.pago_con || 0),
                             cajas_entregar: Number(this.despacho.cajas_entregar || 0),
+                            observacion_cajas: (this.despacho.observacion_cajas || '').trim(),
+                            observacion_pago: (this.despacho.observacion_pago || '').trim(),
                             entregado: this.despacho.entregado
                         };
                         try {
@@ -797,11 +821,12 @@
                                 `);
                             }
 
-                            const columnClass = actionButtons.length === 1 ? 'col-12' : actionButtons.length === 2 ? 'col-6' : 'col-4';
+                            const columnClass = actionButtons.length === 1 ? 'col-12' : actionButtons.length === 2 ?
+                                'col-6' : 'col-4';
 
-                            const buttonsHtml = actionButtons.length
-                                ? `<div class="row g-2">${actionButtons.map(btn => `<div class="${columnClass}">${btn}</div>`).join('')}</div>`
-                                : '<p class="text-center mb-0">No se generaron documentos.</p>';
+                            const buttonsHtml = actionButtons.length ?
+                                `<div class="row g-2">${actionButtons.map(btn => `<div class="${columnClass}">${btn}</div>`).join('')}</div>` :
+                                '<p class="text-center mb-0">No se generaron documentos.</p>';
 
                             swal.fire({
                                 title: 'Venta despachada correctamente',
@@ -843,24 +868,24 @@
                                 onOpen: (el) => {
                                     el.querySelector('#btn-cerrar')?.addEventListener('click', (
                                         e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            swal.close();
-                                            // Mostrar un swal de confirmación
-                                            // swal.fire({
-                                            //     title: 'Confirmación',
-                                            //     text: '¿Estás seguro de cerrar la ventana?',
-                                            //     type: 'warning',
-                                            //     showCancelButton: true,
-                                            //     confirmButtonText: 'Sí, cerrar',
-                                            //     cancelButtonText: 'No, mantener abierta',
-                                            // }).then((result) => {
-                                            //     if (result.isConfirmed) {
-                                            //         // Si el usuario confirma, cerramos el swal original
-                                            //         swal.close();
-                                            //     }
-                                            // });
-                                        });
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        swal.close();
+                                        // Mostrar un swal de confirmación
+                                        // swal.fire({
+                                        //     title: 'Confirmación',
+                                        //     text: '¿Estás seguro de cerrar la ventana?',
+                                        //     type: 'warning',
+                                        //     showCancelButton: true,
+                                        //     confirmButtonText: 'Sí, cerrar',
+                                        //     cancelButtonText: 'No, mantener abierta',
+                                        // }).then((result) => {
+                                        //     if (result.isConfirmed) {
+                                        //         // Si el usuario confirma, cerramos el swal original
+                                        //         swal.close();
+                                        //     }
+                                        // });
+                                    });
                                 }
 
                             });
@@ -881,6 +906,8 @@
                                 monto: this.despacho.monto,
                                 cambio: 0,
                                 cajas_entregar: 0,
+                                observacion_cajas: '',
+                                observacion_pago: '',
                                 entregado: false,
                                 arqueo: null,
                                 venta: null
@@ -905,17 +932,15 @@
                                     self.GET_DATA("{{ url('api/cajas-usuario') }}/" + self.user.id + '-' +
                                         self.sucursal.id),
                                     self.GET_DATA("{{ url('api/formapagos') }}"),
-                                    self.GET_DATA("{{url('api/tipopagos')}}"),
+                                    self.GET_DATA("{{ url('api/tipopagos') }}"),
                                 ]).then(([arqueo, cajas, formapagos, tipopagos]) => {
                                     self.arqueo = arqueo;
                                     self.cajas = cajas;
                                     self.formapagos = formapagos;
                                     self.tipopagos = tipopagos || [];
                                 });
-                            } catch (e) {
-                            }
-                        } catch (e) {
-                        }
+                            } catch (e) {}
+                        } catch (e) {}
                     },
                     async ConsultarFecha() {
                         if (this.loading.consultar) return; // Evita doble click
@@ -932,8 +957,7 @@
                                 self.ventas = v.data
                             })
                             dt.create()
-                        } catch (error) {
-                        } finally {
+                        } catch (error) {} finally {
                             this.loading.consultar = false;
                             block.unblock();
                         }
@@ -962,8 +986,7 @@
                                     let url = "{{ url('api/ventas') }}/" + id
                                     await axios.delete(url)
                                     self.ConsultarFecha()
-                                } catch (e) {
-                                }
+                                } catch (e) {}
                             }
                         })
                     }
@@ -1009,6 +1032,7 @@
                 cursor: pointer;
                 gap: 6px;
             }
+
             .custom-checkbox {
                 width: 28px;
                 height: 28px;
