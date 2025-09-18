@@ -355,7 +355,7 @@
                         </div>
                     </div>`
         }
-        $("#user_name").html(login_user.usuario)
+        $("#user_name").html(login_user.nombre)
     </script>
     <!-- BEGIN PAGE LEVEL PLUGINS/CUSTOM SCRIPTS -->
     <script src="{{ asset('/assets/plugins/apex/apexcharts.min.js') }}"></script>

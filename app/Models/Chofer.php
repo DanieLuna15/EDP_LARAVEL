@@ -24,4 +24,7 @@ class Chofer extends Model
     {
         return $this->hasOne(TurnoChofer::class)->with(['VentaTurnoChofers'])->where([['estado',1],['apertura',1]])->orderBy('id','desc');
     }
+    public function ZonaDespacho(){
+        return $this->belongsTo(ZonaDespacho::class);
+    }
 }

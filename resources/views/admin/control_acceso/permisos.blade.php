@@ -1532,7 +1532,7 @@
                             const confirmDelete = await swal({
                                 title: 'Eliminar menú',
                                 text: `Esta acción enviará "${item.label}" a la papelera. ¿Desea continuar?`,
-                                icon: 'warning',
+                                type: 'warning',
                                 buttons: {
                                     cancel: {
                                         text: 'Cancelar',

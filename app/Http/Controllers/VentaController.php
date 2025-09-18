@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use App\Models\Lote;
 
 use App\Models\Venta;
+use App\Models\Chofer;
 use App\Models\Cliente;
 use App\Models\ItemsPt;
 use App\Models\VentaPp;
@@ -311,10 +312,15 @@ class VentaController extends Controller
                 $venta->despachado = 1;
                 $venta->user_id = $request->user_id;
                 $venta->preventista_id = $request->preventista_id;
-                $venta->distribuidor_id = $request->distribuidor_id;
+
                 $venta->sucursal_id = $request->sucursal_id;
                 $venta->cliente_id = $request->cliente_id;
+
                 $venta->chofer_id = $request->chofer_id;
+
+                $chofer = Chofer::with('user')->find($request->chofer_id);
+                $venta->distribuidor_id = $chofer && $chofer->user ? $chofer->user->id : 1;
+
                 $venta->observacion = $request->observacion;
                 $venta->total = $request->total;
                 if ($request->metodo_pago == 1) {

@@ -240,7 +240,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-sm-3 col-6">
+
+                                        <div class="col-sm-3 col-6" style="display: none">
                                             <div class="form-group">
                                                 <label>Distribuidor</label>
                                                 <div class="input-group mb-4">
@@ -253,11 +254,8 @@
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div class="col-sm-3 col-6">
-
-
-
-
                                             <div class="form-group ">
                                                 <label>Acuerdo </label>
                                                 <select v-model="model.acuerdo_cliente_id" class="form-control">
@@ -806,7 +804,7 @@
                         try {
                             if (!this.model.preventista_id || this.model.preventista_id === 0) {
                                 await Swal.fire({
-                                    icon: 'error',
+                                    type: 'error',
                                     title: 'Error',
                                     text: 'Debe seleccionar un preventista antes de guardar.',
                                 });
@@ -814,7 +812,7 @@
                             }
                             if (!this.model.distribuidor_id || this.model.distribuidor_id === 0) {
                                 await Swal.fire({
-                                    icon: 'error',
+                                    type: 'error',
                                     title: 'Error',
                                     text: 'Debe seleccionar un preventista antes de guardar.',
                                 });

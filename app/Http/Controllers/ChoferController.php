@@ -17,11 +17,11 @@ class ChoferController extends Controller
      */
     public function index()
     {
-        return Chofer::with(['Documento','EstadoCompraChofer'])->where('estado',1)->get();
+        return Chofer::with(['Documento','EstadoCompraChofer','ZonaDespacho'])->where('estado',1)->get();
     }
     public function turno()
     {
-        $model = Chofer::with(['Documento','EstadoCompraChofer'])->where('estado',1)->get();
+        $model = Chofer::with(['Documento','EstadoCompraChofer','ZonaDespacho'])->where('estado',1)->get();
         $lista = [];
         foreach ($model as $chofer) {
             $lista[] = $this->show($chofer);
@@ -65,6 +65,7 @@ class ChoferController extends Controller
             $chofer->documento_id = $request->documento_id;
             $chofer->doc = $request->doc;
             $chofer->zona = $request->zona;
+            $chofer->zona_despacho_id = $request->zona_despacho_id;
             $chofer->modelo = $request->modelo;
             $chofer->placa = $request->placa;
             $chofer->color = $request->color;
@@ -130,6 +131,7 @@ class ChoferController extends Controller
             $chofer->documento_id = $request->documento_id;
             $chofer->doc = $request->doc;
             $chofer->zona = $request->zona;
+            $chofer->zona_despacho_id = $request->zona_despacho_id;
             $chofer->modelo = $request->modelo;
             $chofer->placa = $request->placa;
             $chofer->color = $request->color;

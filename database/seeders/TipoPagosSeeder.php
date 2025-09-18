@@ -17,6 +17,8 @@ class TipoPagosSeeder extends Seeder
      */
     public function run()
     {
+        Tipopago::truncate();
+
         Tipopago::create([
             'name' => 'CONTADO',
             'estado' => 1

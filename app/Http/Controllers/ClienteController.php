@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\ClienteExport;
 use App\Imports\ClienteImport;
+use App\Models\Chofer;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ClienteController extends Controller
@@ -145,10 +146,15 @@ class ClienteController extends Controller
         $cliente->tipo_negocio_id = $request->tipo_negocio_id;
         $cliente->zona_despacho_id = $request->zona_despacho_id;
         $cliente->preventista_id = $request->preventista_id ?: 1;
-        $cliente->distribuidor_id = $request->distribuidor_id ?: 1;
         $cliente->horario_preferencia = $request->horario_preferencia;
         $cliente->horario_pedido = $request->horario_pedido;
         $cliente->chofer_id = $request->chofer_id;
+
+        $cliente->distribuidor_id = Chofer::with('user')
+            ->find($request->chofer_id)
+            ?->user
+            ?->id;
+
         $cliente->aprobado = 0;
         $cliente->save();
         foreach ($request->cajas_cerradas as $caja) {
@@ -241,7 +247,8 @@ class ClienteController extends Controller
         $cliente->horario_pedido = $request->horario_pedido;
         $cliente->chofer_id = $request->chofer_id;
         $cliente->preventista_id = $request->preventista_id ?: 1;
-        $cliente->distribuidor_id = $request->distribuidor_id ?: 1;
+        $chofer = Chofer::with('user')->find($request->chofer_id);
+        $cliente->distribuidor_id = $chofer && $chofer->user ? $chofer->user->id : 1;
         $cliente->save();
         return $cliente;
     }

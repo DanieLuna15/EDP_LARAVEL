@@ -747,7 +747,7 @@
                             .catch((err) => {
                                 console.error("Error aperturando caja", err);
                                 Swal.fire({
-                                    icon: 'error',
+                                    type: 'error',
                                     title: 'Error',
                                     text: 'No se pudo aperturar la caja. Intenta nuevamente.',
                                 });

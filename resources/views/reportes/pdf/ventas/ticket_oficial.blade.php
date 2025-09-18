@@ -114,7 +114,7 @@
                     <td style="border:1px solid #000;" align="right">{{ number_format($de->peso_neto, 3) }}</td>
                     <td style="border:1px solid #000;" align="right">{{ number_format($de->precio_acuerdo, 2) }}</td>
                     <td style="border:1px solid #000;" align="right">
-                        {{ number_format($de->peso_neto * $de->precio_acuerdo, 2) }}
+                        {{ number_format($precio_sin_descuento, 2) }}
                     </td>
                 </tr>
                 @if ($de->subdetalleDescuentoAcuerdo)

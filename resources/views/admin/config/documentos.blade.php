@@ -199,7 +199,7 @@
                                 title: "¡Error!",
                                 text: "Hubo un problema al obtener los datos.",
                                 type: 'error',
-                                icon: "error",
+                                type: "error",
                                 button: "Aceptar"
                             });
                         }

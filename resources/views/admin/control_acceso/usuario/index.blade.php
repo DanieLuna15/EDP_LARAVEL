@@ -120,7 +120,7 @@
                                             <div v-if="puntosVenta">
                                                 <select id="selectPuntoVenta" v-model="selectPuntoVenta" @change="onChangePuntoVenta" class="form-control">
                                                     <option v-for="punto in puntosVenta" :value="punto.id" :key="punto.id">
-                                                        {{ punto.nombre }} 
+                                                        {{ punto.nombre }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -174,7 +174,7 @@
                                                             <span class="text-truncate">{{ subMenu.label }}</span>
                                                             <div class="d-flex align-items-center gap-3">
                                                                 <small v-if="subMenu.children && subMenu.children.length" class="text-muted">({{ getProgress(subMenu).countActive }}/{{ getProgress(subMenu).total }})</small>
-                                                                
+
                                                                 <div class="form-check form-switch p-4">
                                                                     <input class="form-check-input ms-3" type="checkbox" role="switch"
                                                                         :id="'subMenuSwitch' + subMenu.id"
@@ -318,7 +318,7 @@
                             swal({
                                 title: '¡Acción no permitida!',
                                 text: 'No puedes eliminar tu propio usuario mientras estás logueado.',
-                                icon: 'warning',
+                                type: 'warning',
                                 button: 'Aceptar'
                             });
                             return;
@@ -348,7 +348,7 @@
                                     swal({
                                         title: 'Eliminado!',
                                         text: 'El usuario ha sido eliminado.',
-                                        icon: 'success',
+                                        type: 'success',
                                         button: 'Aceptar'
                                     });
                                 } catch (e) {
@@ -356,14 +356,14 @@
                                         swal({
                                             title: 'Error',
                                             text: e.response.data.error,
-                                            icon: 'error',
+                                            type: 'error',
                                             button: 'Aceptar'
                                         });
                                     } else {
                                         swal({
                                             title: 'Error inesperado',
                                             text: 'No se pudo eliminar el usuario.',
-                                            icon: 'error',
+                                            type: 'error',
                                             button: 'Aceptar'
                                         });
                                     }
@@ -421,7 +421,7 @@
                                 }
                               })
                               .catch(error => {
-                                
+
                               })
                         }
                     },
@@ -429,7 +429,7 @@
                         try {
                             const response = await axios.get("{{ url('usuario/listar_punto_sesion') }}");
                             this.puntosVenta = response.data.data;
-                        } catch (error) { 
+                        } catch (error) {
                          this.puntosVenta=error.data.data;
                         }
                     },
@@ -503,14 +503,14 @@
                     },
                 },
                 mounted() {
-                    this.$nextTick(async () => { 
+                    this.$nextTick(async () => {
                         await this.load();
                         const message = sessionStorage.getItem('success_message');
                         if (message) {
                             swal({
                                 title: "¡Éxito!",
                                 text: message,
-                                icon: "success",
+                                type: "success",
                                 button: "Aceptar"
                             });
                             sessionStorage.removeItem('success_message');
