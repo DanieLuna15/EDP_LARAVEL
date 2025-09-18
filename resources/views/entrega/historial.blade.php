@@ -236,6 +236,24 @@
                                             </div>
                                         </div>
 
+                                        <div class="col-4" v-if="mostrarCamposBancarios">
+                                            <div class="form-group">
+                                                <label for="">Banco</label>
+                                                <select class="form-control" v-model="despacho.banco_id">
+                                                    <option value="" disabled>Selecciona un banco</option>
+                                                    <option v-for="b in bancos" :key="b.id" :value="b.id">{{ b . name }}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-4" v-if="mostrarCamposBancarios">
+                                            <div class="form-group">
+                                                <label for="">Comprobante de pago</label>
+                                                <input type="text" class="form-control" v-model="despacho.comprobante_pago"
+                                                    placeholder="N° de comprobante o referencia">
+                                            </div>
+                                        </div>
+
                                         <div class="col-4">
                                             <div class="form-group">
                                                 <label for="">Monto a Pagar</label>
@@ -370,6 +388,24 @@
                                                     <option v-for="f in formapagos" :value="f.id">{{ f . name }}
                                                     </option>
                                                 </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-6" v-if="mostrarCamposBancariosGlobal">
+                                            <div class="form-group">
+                                                <label for="">Banco</label>
+                                                <select class="form-control" v-model="bancoGlobalId">
+                                                    <option value="" disabled>Selecciona un banco</option>
+                                                    <option v-for="b in bancos" :key="`global-${b.id}`" :value="b.id">{{ b . name }}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-6" v-if="mostrarCamposBancariosGlobal">
+                                            <div class="form-group">
+                                                <label for="">Comprobante de pago</label>
+                                                <input type="text" class="form-control" v-model="comprobanteGlobal"
+                                                    placeholder="N° de comprobante o referencia">
                                             </div>
                                         </div>
                                     </div>
@@ -507,6 +543,7 @@
                             cantidad_cajas: 0
                         },
                         formapagos: [],
+                        bancos: [],
                         despacho: {
                             formapago_id: 1,
                             pago_con: 0,
@@ -514,13 +551,17 @@
                             cambio: 0,
                             cajas_entregar: 0,
                             observacion_cajas: '',
-                            observacion_pago: ''
+                            observacion_pago: '',
+                            banco_id: '',
+                            comprobante_pago: ''
                         },
                         ventasCreditoCliente: [],
                         ventasSeleccionadas: [],
                         totalPagar: 0,
                         totalPagarEditable: 0,
                         formapagoGlobal: 1,
+                        bancoGlobalId: '',
+                        comprobanteGlobal: '',
                         clienteActual: null,
                         showCreditoError: false,
                         tipopagos: [],
@@ -538,6 +579,12 @@
                             return '0.00';
                         }
                         return (pagoCon - montoPagar).toFixed(2);
+                    },
+                    mostrarCamposBancarios() {
+                        return Number(this.despacho.formapago_id) !== 1;
+                    },
+                    mostrarCamposBancariosGlobal() {
+                        return Number(this.formapagoGlobal) !== 1 && !!this.formapagoGlobal;
                     }
                 },
                 methods: {
@@ -593,13 +640,23 @@
                             return swal.fire('Error', 'Debes seleccionar una forma de pago para continuar',
                                 'error');
                         }
+                        if (this.mostrarCamposBancariosGlobal && !this.bancoGlobalId) {
+                            return swal.fire('Dato requerido', 'Selecciona un banco para registrar el pago.', 'warning');
+                        }
+                        if (this.mostrarCamposBancariosGlobal && !this.comprobanteGlobal) {
+                            return swal.fire('Dato requerido', 'Ingresa el comprobante de pago.', 'warning');
+                        }
                         this.despacho.arqueo = this.arqueo;
+                        this.despacho.banco_id = this.mostrarCamposBancariosGlobal ? Number(this.bancoGlobalId) : null;
+                        this.despacho.comprobante_pago = this.mostrarCamposBancariosGlobal ? this.comprobanteGlobal : '';
                         try {
                             let res = await axios.post('/api/pagar-venta', {
                                 ventaIds: this.ventasSeleccionadas,
                                 monto: this.totalPagarEditable,
                                 despacho: this.despacho,
-                                formapago_id: this.formapagoGlobal
+                                formapago_id: this.formapagoGlobal,
+                                banco_id: this.mostrarCamposBancariosGlobal ? this.bancoGlobalId : null,
+                                comprobante_pago: this.mostrarCamposBancariosGlobal ? this.comprobanteGlobal : null
                             });
 
                             if (res.data.success) {
@@ -636,6 +693,9 @@
                                 );
                                 this.totalPagar = 0;
                                 this.ventasSeleccionadas = [];
+                                this.bancoGlobalId = '';
+                                this.comprobanteGlobal = '';
+                                this.formapagoGlobal = 1;
                             } else {
                                 swal.fire('Error', 'Hubo un problema al procesar el pago', 'error');
                                 this.ConsultarFecha();
@@ -703,6 +763,9 @@
                         this.despacho.entregado = (entregadoNum === 2) ? 2 : 0;
                         this.despacho.observacion_cajas = '';
                         this.despacho.observacion_pago = '';
+                        this.despacho.banco_id = '';
+                        this.despacho.comprobante_pago = '';
+                        this.despacho.formapago_id = 1;
                         if (this.venta.venta_pago == 1) {
                             this.despacho.monto = 0
                         } else {
@@ -720,6 +783,8 @@
                             cajas_entregar: Number(this.despacho.cajas_entregar || 0),
                             observacion_cajas: (this.despacho.observacion_cajas || '').trim(),
                             observacion_pago: (this.despacho.observacion_pago || '').trim(),
+                            banco_id: this.mostrarCamposBancarios ? Number(this.despacho.banco_id) : null,
+                            comprobante_pago: this.mostrarCamposBancarios ? (this.despacho.comprobante_pago || '').trim() : null,
                             entregado: this.despacho.entregado
                         };
                         try {
@@ -775,6 +840,26 @@
                                     type: 'warning',
                                     confirmButtonText: 'Aceptar',
                                     confirmButtonClass: 'btn btn-danger',
+                                });
+                                return;
+                            }
+
+                            if (this.mostrarCamposBancarios && !this.despacho.banco_id) {
+                                await swal.fire({
+                                    title: 'Dato requerido',
+                                    text: 'Selecciona un banco para registrar el pago.',
+                                    type: 'warning',
+                                    confirmButtonText: 'Aceptar'
+                                });
+                                return;
+                            }
+
+                            if (this.mostrarCamposBancarios && !this.despacho.comprobante_pago) {
+                                await swal.fire({
+                                    title: 'Dato requerido',
+                                    text: 'Ingresa el comprobante de pago.',
+                                    type: 'warning',
+                                    confirmButtonText: 'Aceptar'
                                 });
                                 return;
                             }
@@ -933,11 +1018,13 @@
                                         self.sucursal.id),
                                     self.GET_DATA("{{ url('api/formapagos') }}"),
                                     self.GET_DATA("{{ url('api/tipopagos') }}"),
-                                ]).then(([arqueo, cajas, formapagos, tipopagos]) => {
+                                    self.GET_DATA("{{ url('api/bancos') }}"),
+                                ]).then(([arqueo, cajas, formapagos, tipopagos, bancos]) => {
                                     self.arqueo = arqueo;
                                     self.cajas = cajas;
                                     self.formapagos = formapagos;
                                     self.tipopagos = tipopagos || [];
+                                    self.bancos = (bancos || []).filter(b => Number(b.estado ?? 1) === 1);
                                 });
                             } catch (e) {}
                         } catch (e) {}
@@ -989,6 +1076,20 @@
                                 } catch (e) {}
                             }
                         })
+                    }
+                },
+                watch: {
+                    'despacho.formapago_id'(val) {
+                        if (Number(val) === 1) {
+                            this.despacho.banco_id = '';
+                            this.despacho.comprobante_pago = '';
+                        }
+                    },
+                    formapagoGlobal(val) {
+                        if (Number(val) === 1 || !val) {
+                            this.bancoGlobalId = '';
+                            this.comprobanteGlobal = '';
+                        }
                     }
                 },
                 mounted() {
