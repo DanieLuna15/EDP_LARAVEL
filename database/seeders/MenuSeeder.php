@@ -1780,6 +1780,7 @@ Menu::create([
             ['parent_route' => 'validacion/lista', 'route' => 'validacion/cerradas', 'label' => 'Validaciones Cerradas'],
             ['parent_route' => 'validacion/lista', 'route' => 'validacion/lotes', 'label' => 'Validaciones Lotes'],
             ['parent_route' => 'pp/informes', 'route' => 'pp/informes/*'],
+            ['parent_route' => 'pp/lotes', 'route' => 'pp/detalle/*'],
             ['parent_route' => 'pt/lotes', 'route' => 'pt/detalle/*'],
             ['parent_route' => 'transformacion/lotes', 'route' => 'transformacion/detalle/*'],
             ['parent_route' => 'cajas', 'route' => 'cajas/asignacion/*'],
