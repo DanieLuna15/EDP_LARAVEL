@@ -1,39 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no">
-    <title>Inicio de Sesion </title>
+    <title>Inicio de Sesión</title>
+
+    {{-- No-cache en cliente (complemento; lo serio va en middleware abajo) --}}
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    {{-- CSRF para Axios --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <link rel="icon" type="image/x-icon" href="{{ url('assets/assets/img/favicon.ico') }}" />
-    <!-- BEGIN GLOBAL MANDATORY STYLES -->
     <link href="https://fonts.googleapis.com/css?family=Quicksand:400,500,600,700&display=swap" rel="stylesheet">
     <link href="{{ url('assets/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ url('assets/assets/css/plugins.css') }}" rel="stylesheet" type="text/css" />
-    <!-- END GLOBAL MANDATORY STYLES -->
-    <!-- BEGIN PAGE LEVEL PLUGINS/CUSTOM STYLES -->
     <link href="{{ url('assets/assets/css/authentication/form-2.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('assets/plugins/sweetalerts/sweetalert2.min.css') }}" rel="stylesheet" type="text/css" />
     <style>
         body {
-            background: url("{{ url('img/fondo.jpeg') }}");
-            background-repeat: no-repeat;
-            background-size: cover;
+            background: url("{{ url('img/fondo.jpeg') }}") no-repeat center center / cover;
         }
 
         #toggle-password {
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: opacity .2s;
         }
 
         #toggle-password:hover {
-            opacity: 0.7;
+            opacity: .7;
         }
     </style>
     <script src="{{ url('assets/vue/vue.js') }}"></script>
     <script src="{{ url('assets/axios.js') }}"></script>
-
 </head>
 
 <body class="form">
@@ -44,10 +47,12 @@
                     <div class="form-container">
                         <div class="form-content">
                             <img :src="imgPollo" alt="" style="width: 25%;">
-                            <h1 class="">Iniciar Sesion</h1>
-                            <p class="">Ingresa tus credenciales para continuar </p>
+                            <h1>Iniciar Sesión</h1>
+                            <p>Ingresa tus credenciales para continuar</p>
+
                             <div class="text-left">
-                                <form class="form">
+                                <!-- Bloquea envío HTML y usa Axios -->
+                                <form class="form" @submit.prevent="Save" autocomplete="off" novalidate>
                                     <div id="username-field" class="field-wrapper input">
                                         <label for="username">Usuario</label>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -56,9 +61,11 @@
                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                             <circle cx="12" cy="7" r="4"></circle>
                                         </svg>
-                                        <input v-model="model.usuario" id="username" name="username" type="text"
-                                            class="form-control" placeholder="Usuario">
+                                        <input v-model.trim="model.usuario" id="username" name="username" type="text"
+                                            class="form-control" placeholder="Usuario" inputmode="email"
+                                            autocomplete="username">
                                     </div>
+
                                     <div id="password-field" class="field-wrapper input mb-2">
                                         <div class="d-flex justify-content-between">
                                             <label for="password">Contraseña</label>
@@ -71,31 +78,30 @@
                                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                         </svg>
                                         <input v-model="model.password" id="password" name="password" type="password"
-                                            class="form-control" placeholder="Password">
+                                            class="form-control" placeholder="Password" autocomplete="current-password">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round" id="toggle-password"
-                                            class="feather feather-eye" style="cursor: pointer;" @click="togglePassword">
+                                            class="feather feather-eye" @click="togglePassword">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                             <circle cx="12" cy="12" r="3"></circle>
                                         </svg>
                                     </div>
+
                                     <div class="d-sm-flex justify-content-between">
                                         <div class="field-wrapper">
-                                            <button @click="Save()" type="submit" class="btn btn-primary"
-                                                value="">Iniciar Sesion</button>
+                                            <!-- type=submit, sin @click -->
+                                            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
                                         </div>
                                     </div>
-                            </div>
-                            </form>
+                                </form>
+                            </div> <!-- /text-left -->
                         </div>
                     </div>
                 </div>
             </div>
         @endverbatim
     </div>
-    </div>
-    <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
 
     <script src="{{ url('/assets/assets/js/libs/jquery-3.1.1.min.js') }}"></script>
     <script src="{{ url('/assets/bootstrap/js/popper.min.js') }}"></script>
@@ -105,13 +111,20 @@
     <script src="{{ asset('/assets/plugins/sweetalerts/sweetalert2.min.js') }}"></script>
 
     <script type="module">
-        import Table from "{{ url('config/dt.js') }}"
-        import Block from "{{ url('config/block.js') }}"
+        import Table from "{{ url('config/dt.js') }}";
+        import Block from "{{ url('config/block.js') }}";
         const {
             createApp
-        } = Vue
-        let dt = new Table()
-        let block = new Block()
+        } = Vue;
+
+        // Configura CSRF para Axios
+        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute(
+            'content');
+
+        let dt = new Table();
+        let block = new Block();
+
         createApp({
             data() {
                 return {
@@ -119,103 +132,95 @@
                         usuario: '',
                         password: ''
                     }
-
-
                 }
             },
             computed: {
                 imgPollo() {
                     return "{{ url('') }}/img/perfil.jpg"
-                },
+                }
             },
             methods: {
-
-                async GET_DATA(path) {
-                    try {
-                        let res = await axios.get("url_path()" + path)
-                        return res.data
-                    } catch (e) {
-
-                    }
-                },
                 async Save() {
                     try {
-                        let self = this
-                        const params = new URLSearchParams(this.model);
-                        let url = "{{ url('login') }}";
-                        let res = await axios.post(url, this.model);
-                        if (res.data.success == "true") {
-                            let user = JSON.stringify(res.data.data)
-                            let sucursal = res.data.data.sellingpoints_sucursal;
-                            localStorage.setItem('AppUser', user);
-                            localStorage.setItem('AppSucursal', JSON.stringify(sucursal[0]));
-                            // localStorage.setItem('AppSucursal', sucursal[0]);
-                            location.href = "{{ url('') }}"
-                            //location.href = "{{ url('sucursal') }}"
-                        } else {
-                            const swalWithBootstrapButtons = swal.mixin({
-                                confirmButtonClass: 'btn btn-success btn-rounded',
-                                cancelButtonClass: 'btn btn-danger btn-rounded mr-3',
-                                buttonsStyling: false,
-                            })
-                            swalWithBootstrapButtons({
-                                title: 'Error',
-                                text: res.data.mensaje,
-                                type: 'error',
-                                showCancelButton: false,
-                                confirmButtonText: 'Ok!',
-                                padding: '2em'
-                            })
-                        }
+                        const url = "{{ url('login') }}"; // ruta POST login
+                        const res = await axios.post(url, this.model, {
+                            withCredentials: true
+                        });
 
+                        if (res.data?.success === "true" || res.data?.success === true) {
+                            const user = res.data.data ?? {};
+                            const sucursal = user.sellingpoints_sucursal ?? [];
+                            localStorage.setItem('AppUser', JSON.stringify(user));
+                            if (sucursal[0]) localStorage.setItem('AppSucursal', JSON.stringify(sucursal[0]));
+                            // Redirige a home
+                            window.location.replace("{{ url('') }}");
+                        } else {
+                            this.alertError(res.data?.mensaje || 'Credenciales inválidas');
+                        }
                     } catch (e) {
-                        const swalWithBootstrapButtons = swal.mixin({
-                            confirmButtonClass: 'btn btn-success btn-rounded',
-                            cancelButtonClass: 'btn btn-danger btn-rounded mr-3',
-                            buttonsStyling: false,
-                        })
-                        swalWithBootstrapButtons({
-                            title: 'Error',
-                            text: e.response.data.mensaje,
-                            type: 'error',
-                            showCancelButton: false,
-                            confirmButtonText: 'Ok!',
-                            padding: '2em'
-                        })
+                        const msg = e?.response?.data?.mensaje || 'Error al iniciar sesión';
+                        this.alertError(msg);
                     }
+                },
+                alertError(texto) {
+                    const swalWithBootstrapButtons = swal.mixin({
+                        confirmButtonClass: 'btn btn-success btn-rounded',
+                        cancelButtonClass: 'btn btn-danger btn-rounded mr-3',
+                        buttonsStyling: false,
+                    });
+                    swalWithBootstrapButtons({
+                        title: 'Error',
+                        text: texto,
+                        type: 'error',
+                        showCancelButton: false,
+                        confirmButtonText: 'Ok!',
+                        padding: '2em'
+                    });
                 },
                 togglePassword() {
-                    const passwordInput = document.getElementById('password');
-                    const toggleIcon = document.getElementById('toggle-password');
-
-                    if (passwordInput.type === 'password') {
-                        passwordInput.type = 'text';
-                        toggleIcon.innerHTML = `
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                        `;
+                    const input = document.getElementById('password');
+                    const icon = document.getElementById('toggle-password');
+                    if (!input || !icon) return;
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.innerHTML = `
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    `;
                     } else {
-                        passwordInput.type = 'password';
-                        toggleIcon.innerHTML = `
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        `;
+                        input.type = 'password';
+                        icon.innerHTML = `
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    `;
                     }
                 },
+                async logoutIfStaleSession() {
+                    // Limpia storages del cliente
+                    try {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                    } catch (_) {}
+
+                    // Intenta invalidar sesión del servidor si estás “medio logueado”
+                    try {
+                        await axios.post("{{ url('logout') }}"); // define esta ruta POST logout en Laravel
+                    } catch (_) {
+                        /* si no hay sesión, todo bien */ }
+                }
             },
-            mounted() {
-                this.$nextTick(async () => {
-                    let self = this
-                    try {} catch (e) {} finally {
-
-                    }
-                    // do whatever you want if console is [object object] then stringify the response
-                })
+            async mounted() {
+                // Evita que el navegador cachee esta página en el historial
+                if ('caches' in window) {
+                    try {
+                        const names = await caches.keys();
+                        for (const n of names) await caches.delete(n);
+                    } catch (_) {}
+                }
+                await this.logoutIfStaleSession();
             }
-
-        }).mount('#meApp')
+        }).mount('#meApp');
     </script>
-
 </body>
 
 </html>

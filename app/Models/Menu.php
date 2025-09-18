@@ -30,6 +30,10 @@ class Menu extends Model
         'usr_eliminado',
     ];
 
+    protected $casts = [
+        'estado' => 'integer',
+    ];
+
     // Atributos adicionales que se adjuntarán al array del modelo
     protected $appends = ['icon_mdi', 'icon_menu'];
 

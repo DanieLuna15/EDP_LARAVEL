@@ -264,6 +264,7 @@ class UserController extends Controller
         // Carga todos los menús y sus relaciones de forma recursiva
         // con un simple with() para que el modelo gestione la recursividad
         $menus = Menu::whereNull('menu_id')
+            ->where('estado', '!=', 0)
             ->with('children')
             ->orderBy('order', 'asc')
             ->get();
@@ -275,6 +276,9 @@ class UserController extends Controller
     {
         $resp = [];
         foreach ($menus as $menu) {
+            if ((int) ($menu->estado ?? 0) !== 1) {
+                continue;
+            }
             $currentMenu = $menu->toArray();
             $currentMenu['sub_menu'] = []; // Inicializa la clave sub_menu como un array vacío
 
@@ -300,10 +304,10 @@ class UserController extends Controller
         $menuRol_  = MenuRol::where('rol_id', $rolId)->where('check', true)->get()->pluck('menu_id');
         // Eager load nivel 1 y sus hijos (nivel 2)
         $menus_    = Menu::with(['subMenuN1' => function ($q) {
-            $q->orderBy('order', 'asc');
+            $q->where('estado', '!=', 0)->orderBy('order', 'asc');
         }, 'subMenuN1.children' => function ($q) {
-            $q->orderBy('order', 'asc');
-        }])->whereNull('menu_id')->orderBy('order', 'asc')->get();
+            $q->where('estado', '!=', 0)->orderBy('order', 'asc');
+        }])->whereNull('menu_id')->where('estado', '!=', 0)->orderBy('order', 'asc')->get();
 
         $menusResp = [];
         foreach ($menus_ as $key => $value) {

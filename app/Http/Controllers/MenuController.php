@@ -12,18 +12,36 @@ class MenuController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $menus = Menu::with([
-            'subMenuN1' => function ($query) {
-                $query->where('estado', true)->orderBy('order', 'asc');
+        $includeInactive = $request->boolean('with_inactive', false);
+
+        $query = Menu::with([
+            'subMenuN1' => function ($builder) use ($includeInactive) {
+                if ($includeInactive) {
+                    $builder->where('estado', '!=', 0);
+                } else {
+                    $builder->where('estado', 1);
+                }
+                $builder->orderBy('order', 'asc');
             },
-            // Cargar nietos (nivel 2) de cada submenú
-            'subMenuN1.children' => function ($query) {
-                $query->where('estado', true)->orderBy('order', 'asc');
+            'subMenuN1.children' => function ($builder) use ($includeInactive) {
+                if ($includeInactive) {
+                    $builder->where('estado', '!=', 0);
+                } else {
+                    $builder->where('estado', 1);
+                }
+                $builder->orderBy('order', 'asc');
             },
-        ])->whereNull('menu_id')->where('estado', true)->orderBy('order', 'asc')->get();
-        return $menus;
+        ])->whereNull('menu_id')->orderBy('order', 'asc');
+
+        if ($includeInactive) {
+            $query->where('estado', '!=', 0);
+        } else {
+            $query->where('estado', 1);
+        }
+
+        return $query->get();
     }
 
     /**
@@ -45,6 +63,12 @@ class MenuController extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
+        if (array_key_exists('estado', $input)) {
+            $estado = (int) $input['estado'];
+            $input['estado'] = in_array($estado, [0, 1, 2], true) ? $estado : 1;
+        } else {
+            $input['estado'] = 1;
+        }
         return Menu::create($input);
     }
 
@@ -79,13 +103,35 @@ class MenuController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $input       = $request->all();
-        $menu        = Menu::find($id);
-        $menu->label = $input['label'];
-        $menu->icon  = $input['icon'];
-        $menu->route = $input['route'];
+        $input = $request->all();
+        $menu  = Menu::findOrFail($id);
+
+        if (array_key_exists('label', $input)) {
+            $menu->label = $input['label'];
+        }
+        if (array_key_exists('icon', $input) && $input['icon']) {
+            $menu->icon = $input['icon'];
+        }
+        if (array_key_exists('route', $input)) {
+            $menu->route = $input['route'];
+        }
+        if (array_key_exists('estado', $input)) {
+            $estado = (int) $input['estado'];
+            $menu->estado = in_array($estado, [0, 1, 2], true) ? $estado : $menu->estado;
+        }
+        if (array_key_exists('order', $input)) {
+            $menu->order = $input['order'];
+        }
+        if (array_key_exists('menu_id', $input)) {
+            $menu->menu_id = $input['menu_id'];
+        }
+        if (array_key_exists('level', $input)) {
+            $menu->level = $input['level'];
+        }
+
         $menu->save();
-        return $menu;
+
+        return $menu->fresh();
     }
 
     /**
@@ -98,7 +144,7 @@ class MenuController extends Controller
     {
         // Desactivar (soft disable) cambiando estado = 0 en lugar de eliminar
         $menu = Menu::findOrFail($id);
-        $menu->estado = false;
+        $menu->estado = 0;
         $menu->save();
         return response()->json(['status' => 'disabled', 'id' => $menu->id]);
     }

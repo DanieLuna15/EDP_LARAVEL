@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckMenuAccess
 {
-    /**
-     * Handle an incoming request.
-     *
-     * If the authenticated user's role does not have access (via menu_roles)
-     * to a menu whose route matches the current path, forbid the request.
-     */
     public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
@@ -23,57 +17,76 @@ class CheckMenuAccess
             return redirect()->guest('login');
         }
 
-        // Normalize current path (no leading slash)
-        $path = trim($request->path(), '/');
+        // Normaliza ruta actual con slash inicial y sin querystring
+        $current = '/' . ltrim($request->path(), '/'); // ej: /pp/detalle/3
 
-        // Allow home dashboard and blank path by default
-        if ($path === '' || $path === '/') {
+        // Permite home y vacío
+        if ($current === '/' || $current === '') {
             return $next($request);
         }
 
-        // If the request is clearly API/AJAX/json, skip this check
-        if ($request->expectsJson() || $request->ajax() || strpos($path, 'api/') === 0) {
+        // Sáltate API/AJAX/JSON
+        if ($request->expectsJson() || $request->ajax() || str_starts_with($current, '/api/')) {
             return $next($request);
         }
 
-        // Retrieve the first role via Spatie (system assumes single-role per user)
+        // Rol del usuario (asumes un solo rol)
         $role = $user->roles()->select('id', 'name')->first();
         if (! $role) {
-            // No role assigned: block navigation to protected areas
             abort(403, 'No tiene rol asignado para acceder.');
         }
 
-        // Get allowed menu ids for this role
+        // Menús habilitados para el rol
         $menuIds = MenuRol::where('rol_id', $role->id)
             ->where('check', true)
-            ->pluck('menu_id')
-            ->toArray();
+            ->pluck('menu_id');
 
-        if (empty($menuIds)) {
+        if ($menuIds->isEmpty()) {
             abort(403, 'No tiene acceso a menús.');
         }
 
-        // Only gather routes that are explicitly assigned to the role
-        $allowed = Menu::whereIn('id', $menuIds)
+        // Rutas permitidas como plantillas (ej: "pp/detalle/{id}")
+        $templates = Menu::whereIn('id', $menuIds->all())
             ->pluck('route')
-            ->filter(function ($route) {
-                return is_string($route) && trim($route) !== '';
-            })
-            ->map(function ($route) {
-                return trim($route, '/');
-            })
+            ->filter(fn($r) => is_string($r) && trim($r) !== '')
+            ->map(fn($r) => '/' . ltrim(trim($r), '/'))   // asegúrate de leading slash
             ->unique()
             ->values()
             ->all();
 
-        // Compare current path with allowed prefixes
-        foreach ($allowed as $prefix) {
-            if ($prefix === '') continue;
-            if ($path === $prefix || strpos($path, $prefix . '/') === 0) {
+        // ¿Alguna plantilla hace match con la URL actual?
+        foreach ($templates as $tpl) {
+            $pattern = $this->compileTemplateToRegex($tpl); // convierte {id} a ([^/]+)
+            if (preg_match($pattern, $current)) {
                 return $next($request);
             }
         }
 
         abort(403, 'No tiene permisos para acceder a esta ruta.');
+    }
+
+    /**
+     * Convierte "/pp/detalle/{id}" en regex "/^\/pp\/detalle\/([^\/]+)\/?$/"
+     */
+    protected function compileTemplateToRegex(string $tpl): string
+    {
+        // Normaliza con slash inicial
+        $tpl = '/' . ltrim($tpl, '/');
+
+        // Si termina en /*, autoriza TODO el subárbol
+        if (str_ends_with($tpl, '/*')) {
+            $base = substr($tpl, 0, -2); // sin /*
+            $baseQuoted = preg_quote($base, '/');
+            // ^/ventas/chofers(?:/.*)?$  → permite /ventas/chofers y cualquier cosa debajo
+            return '/^' . $baseQuoted . '(?:\/.*)?$/';
+        }
+
+        // Caso normal: placeholders {id}
+        $quoted = preg_quote($tpl, '/');
+        // {param} → ([^/]+)
+        $quoted = preg_replace('/\\\\\{[A-Za-z_][A-Za-z0-9_]*\\\\\}/', '([^\/]+)', $quoted);
+
+        // Slash final opcional
+        return '/^' . $quoted . '\/?$/';
     }
 }

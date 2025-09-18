@@ -11,8 +11,8 @@
               <div class="row">
               <div class="col-sm-6 col-12">
                   <div class="form-group">
-                    <label for="fullName">Nombres</label>
-                    <input v-model="model.nombre" type="text" class="form-control mb-4">
+                    <label for="nombre" class="required-label">Nombres</label>
+                    <input id="nombre" v-model="model.nombre" type="text" class="form-control mb-4" required>
                   </div>
                 </div>
 
@@ -43,14 +43,20 @@
                   </div>
                 <div class="col-sm-3 col-6">
                   <div class="form-group">
-                    <label for="fullName">N° Doc</label>
-                    <input type="text" v-model="model.doc" class="form-control mb-4" placeholder="">
+                    <label for="doc" class="required-label">N° Doc</label>
+                    <input id="doc" type="text" v-model="model.doc" class="form-control mb-4" placeholder="" required>
                   </div>
                 </div>
                 <div class="col-sm-3 col-12">
                   <div class="form-group">
-                    <label for="fullName">Placa</label>
-                    <input v-model="model.placa" type="text" class="form-control mb-4">
+                    <label for="placa" class="required-label">Placa</label>
+                    <input id="placa" v-model="model.placa" type="text" class="form-control mb-4" required>
+                  </div>
+                </div>
+                <div class="col-sm-3 col-12">
+                  <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input id="password" v-model="model.contrasenia" type="text" class="form-control mb-4" readonly>
                   </div>
                 </div>
               <div class="col-sm-3 col-12">
@@ -134,11 +140,23 @@
           dias_horas:"",
           limite_crediticio:0,
           estado_compra_chofer_id:1,
+          contrasenia:'',
         },
         tipoclientes: [],
         documentos: [],
         cintaClientes: [],
         estadoCompraChofers: [],
+      }
+    },
+    watch: {
+      'model.doc': function () {
+        this.generatePassword();
+      },
+      'model.nombre': function () {
+        this.generatePassword();
+      },
+      'model.placa': function () {
+        this.generatePassword();
       }
     },
     methods: {
@@ -150,7 +168,59 @@
 
         }
       },
+      generatePassword() {
+        const rawDoc = (this.model.doc || '').toString();
+        const docDigits = rawDoc.replace(/\D+/g, '');
+        const lastDocDigits = docDigits.slice(-3);
+
+        const fullName = (this.model.nombre || '').trim();
+        const nameInitials = fullName
+          ? fullName
+              .split(/\s+/)
+              .filter(Boolean)
+              .map(part => part.charAt(0).toLowerCase())
+              .join('')
+          : '';
+
+        const plate = (this.model.placa || '').trim().toLowerCase();
+        const normalizedPlate = plate.replace(/\s+/g, '');
+        const firstPlateChars = normalizedPlate.slice(0, 3);
+
+        if (lastDocDigits && nameInitials && firstPlateChars) {
+          this.model.contrasenia = `${lastDocDigits}-${nameInitials}-${firstPlateChars}`;
+        } else {
+          this.model.contrasenia = '';
+        }
+      },
+      validatePasswordRequirements() {
+        this.generatePassword();
+
+        const missingFields = [];
+        if (!((this.model.nombre || '').trim())) {
+          missingFields.push('Nombres');
+        }
+
+        const docDigits = ((this.model.doc || '').toString()).replace(/\D+/g, '').slice(-3);
+        if (!docDigits) {
+          missingFields.push('N° Doc');
+        }
+
+        if (!((this.model.placa || '').trim())) {
+          missingFields.push('Placa');
+        }
+
+        if (!this.model.contrasenia || missingFields.length) {
+          const fieldList = missingFields.length ? missingFields.join(', ') : 'Nombres, N° Doc y Placa';
+          alert(`Complete los campos obligatorios (${fieldList}) para generar la contraseña.`);
+          return false;
+        }
+
+        return true;
+      },
       async Save() {
+        if (!this.validatePasswordRequirements()) {
+          return;
+        }
         block.block();
         try {
 
@@ -185,6 +255,10 @@
             self.tipoclientes = v[2]
             self.cintaClientes = v[3]
             self.estadoCompraChofers = v[4]
+            if (!self.model.contrasenia) {
+              self.model.contrasenia = ''
+            }
+            self.generatePassword()
           })
           if(self.documentos.length){
             self.model.documento_id=self.documentos[0].id
@@ -204,6 +278,11 @@
 @slot('style')
 <style>
   #map { height: 280px; }
+  .required-label::after {
+    content: ' *';
+    color: #e74c3c;
+    font-weight: bold;
+  }
 </style>
 @endslot
 @endcomponent

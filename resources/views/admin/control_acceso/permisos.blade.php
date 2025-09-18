@@ -101,8 +101,8 @@
                                                         <div class="mini-card"
                                                             :class="{
                                                                 'selected': selectedPath[idx] && selectedPath[idx]
-                                                                    .id === item
-                                                                    .id
+                                                                    .id == item.id,
+                                                                'is-hidden': item && Number(item.estado) === 2
                                                             }"
                                                             @click="onSelect(idx, item)">
                                                             <div class="d-flex align-items-center justify-content-between">
@@ -113,14 +113,23 @@
                                                                     <i :class="getMdiClass(item.icon_mdi)"
                                                                         class="text-primary"></i>
                                                                     <span class="fw-medium">{{ item . label }}</span>
+                                                                    <span v-if="item && Number(item.estado) === 2"
+                                                                        class="badge bg-secondary status-label">Oculto</span>
                                                                 </div>
                                                                 <div class="d-flex gap-1">
-                                                                    <button class="btn btn-light btn-sm"
+                                                                    <button class="btn btn-light btn-sm border"
                                                                         @click.stop="btnItemMenuEdit(item)">
                                                                         <i class="mdi mdi-pencil"></i>
                                                                     </button>
-                                                                    <button class="btn btn-light btn-sm text-danger"
-                                                                        @click.stop="btnItemMenuDelete(item)">
+                                                                    <button class="btn btn-light btn-sm border"
+                                                                        :class="Number(item.estado) === 2 ? 'text-success' : 'text-warning'"
+                                                                        :title="Number(item.estado) === 2 ? 'Mostrar en el menú' : 'Ocultar del menú'"
+                                                                        @click.stop="toggleMenuVisibility(item)">
+                                                                        <i :class="Number(item.estado) === 2 ? 'mdi mdi-eye' : 'mdi mdi-eye-off'"></i>
+                                                                    </button>
+                                                                    <button class="btn btn-light btn-sm border text-danger"
+                                                                        title="Eliminar"
+                                                                        @click.stop="deleteMenu(item)">
                                                                         <i class="mdi mdi-delete"></i>
                                                                     </button>
                                                                 </div>
@@ -207,6 +216,15 @@
                                                 </option>
                                             </select>
                                         </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox"
+                                                :id="`visibleMenuToggle-${formMenu.id || 'nuevo'}`"
+                                                v-model="formMenu.visible">
+                                            <label class="form-check-label"
+                                                :for="`visibleMenuToggle-${formMenu.id || 'nuevo'}`">
+                                                Mostrar en el menú principal
+                                            </label>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
@@ -272,6 +290,7 @@
                             label: null,
                             icon: null,
                             route: null,
+                            visible: true,
                         },
                         btnLoadingMenu: false,
                         dataMenuDelete: null,
@@ -315,14 +334,50 @@
                         block.block();
                         try {
 
-                            const res = await axios.get("{{ url('api/menu') }}")
-                            this.menus = res.data
+                            const res = await axios.get("{{ url('api/menu') }}", {
+                                params: {
+                                    with_inactive: true
+                                }
+                            })
+                            this.menus = this.normalizeEstadoTree(res.data)
                             this.rebuildSelection()
                         } catch (e) {
                             // opcional: manejar error
                         } finally{
                             block.unblock();
                         }
+                    },
+                    normalizeEstadoTree(items) {
+                        if (!Array.isArray(items)) {
+                            return []
+                        }
+                        return items.map(item => {
+                            const clone = {
+                                ...item
+                            }
+                            const rawEstado = item.estado
+                            let numeric = parseInt(rawEstado, 10)
+                            if (Number.isNaN(numeric)) {
+                                if (rawEstado === true) {
+                                    numeric = 1
+                                } else if (rawEstado === false) {
+                                    numeric = 0
+                                } else {
+                                    numeric = 1
+                                }
+                            }
+                            if (![0, 1, 2].includes(numeric)) {
+                                numeric = 1
+                            }
+                            clone.estado = numeric
+                            if (Array.isArray(item.sub_menu_n1)) {
+                                clone.sub_menu_n1 = this.normalizeEstadoTree(item.sub_menu_n1)
+                            }
+                            if (Array.isArray(item.children)) {
+                                clone.children = this.normalizeEstadoTree(item.children)
+                            }
+                            return clone
+                        })
                     },
                     openModal(action, role = null) {
                         this.showModal = true
@@ -407,7 +462,8 @@
                             icon: null,
                             route: null,
                             menu_id: parentId,
-                            level: computedLevel
+                            level: computedLevel,
+                            visible: true
                         };
 
                         this.isFormMenuEdit = false;
@@ -1244,7 +1300,8 @@
                         this.isFormMenuEdit = true;
                         this.dialogMenu = true;
                         this.formMenu = {
-                            ...item
+                            ...item,
+                            visible: Number(item.estado) !== 2
                         };
                         const current = item.icon_mdi || ''
                         this.formMenu.icon = current.replace(/^mdi-/, '')
@@ -1266,9 +1323,20 @@
                         if (this.isFormMenuEdit) {
                             const urlEdit = "{{ url('api/menu') }}/" + dataForm.id;
                             const dataUpdate = {
-                                ...dataForm,
-                                icon: this.normalizeIcon(dataForm.icon)
+                                label: dataForm.label,
+                                icon: this.normalizeIcon(dataForm.icon),
+                                route: dataForm.route,
+                                estado: dataForm.visible ? 1 : 2,
                             };
+                            if (typeof dataForm.menu_id !== 'undefined') {
+                                dataUpdate.menu_id = dataForm.menu_id;
+                            }
+                            if (typeof dataForm.level !== 'undefined') {
+                                dataUpdate.level = dataForm.level;
+                            }
+                            if (typeof dataForm.order !== 'undefined') {
+                                dataUpdate.order = dataForm.order;
+                            }
                             axios
                                 .put(urlEdit, dataUpdate)
                                 .then((response) => {
@@ -1286,8 +1354,12 @@
                                 });
                         } else {
                             const dataSend = {
-                                ...dataForm,
-                                icon: this.normalizeIcon(dataForm.icon)
+                                label: dataForm.label,
+                                icon: this.normalizeIcon(dataForm.icon),
+                                route: dataForm.route,
+                                estado: dataForm.visible ? 1 : 2,
+                                menu_id: dataForm.menu_id ?? null,
+                                level: dataForm.level,
                             };
 
                             // Obtener el padre
@@ -1368,39 +1440,113 @@
                         const val = icon || ''
                         return val.startsWith('mdi-') ? val : `mdi-${val}`
                     },
-                    async btnItemMenuDelete(item) {
+                    async toggleMenuVisibility(item) {
+                        const estadoActual = Number(item && item.estado != null ? item.estado : 1)
+                        const willShow = estadoActual === 2;
+                        const actionText = willShow ? 'mostrar nuevamente' : 'ocultar del menú';
+                        const siguienteEstado = willShow ? 1 : 2;
                         try {
-                            const will = await swal({
-                                title: 'Desactivar',
-                                text: `¿Desea desactivar "${item.label}"?`,
-                                type: 'warning',
-                                buttons: ['Cancelar', 'Sí'],
-                                dangerMode: true
+                            const confirmAction = await swal({
+                                title: willShow ? 'Mostrar menú' : 'Ocultar menú',
+                                text: `¿Desea ${actionText} "${item.label}"?`,
+                                icon: 'warning',
+                                buttons: {
+                                    cancel: {
+                                        text: 'Cancelar',
+                                        value: null,
+                                        visible: true,
+                                        closeModal: true
+                                    },
+                                    confirm: {
+                                        text: 'Sí',
+                                        value: true
+                                    }
+                                },
+                                dangerMode: !willShow,
+                                closeOnClickOutside: false,
+                                closeOnEsc: true
                             });
-                            if (!will) return;
-                            await axios.delete(`{{ url('api/menu') }}/${item.id}`)
-                            // limpiar selección si aplica
-                            if (this.itemSelectMenu && this.itemSelectMenu.id === item.id) {
-                                this.itemSelectMenu = null;
-                                this.subMenus = [];
-                                this.itemSelectSubMenu = null;
-                                this.grandMenus = [];
+                            if (!confirmAction) {
+                                return;
                             }
-                            if (this.itemSelectSubMenu && this.itemSelectSubMenu.id === item.id) {
-                                this.itemSelectSubMenu = null;
-                                this.grandMenus = [];
-                            }
+
+                            await axios.patch(`{{ url('api/menu') }}/${item.id}`, {
+                                estado: siguienteEstado
+                            });
+
+                            // Actualizar el estado en memoria para feedback inmediato
+                            item.estado = siguienteEstado;
+
                             await this.getMenus();
+
                             swal({
                                 title: 'Hecho',
-                                text: 'Menú desactivado',
+                                text: willShow ? 'Menú visible nuevamente' : 'Menú ocultado',
                                 icon: 'success',
                                 button: 'OK'
                             });
                         } catch (e) {
                             swal({
                                 title: 'Error',
-                                text: 'No se pudo desactivar',
+                                text: 'No se pudo actualizar la visibilidad',
+                                icon: 'error',
+                                button: 'Aceptar'
+                            });
+                        }
+                    },
+                    async deleteMenu(item) {
+                        try {
+                            const confirmDelete = await swal({
+                                title: 'Eliminar menú',
+                                text: `Esta acción enviará "${item.label}" a la papelera. ¿Desea continuar?`,
+                                icon: 'warning',
+                                buttons: {
+                                    cancel: {
+                                        text: 'Cancelar',
+                                        value: null,
+                                        visible: true,
+                                        closeModal: true
+                                    },
+                                    confirm: {
+                                        text: 'Sí, eliminar',
+                                        value: true
+                                    }
+                                },
+                                dangerMode: true,
+                                closeOnClickOutside: false,
+                                closeOnEsc: true
+                            });
+                            if (!confirmDelete) {
+                                return;
+                            }
+
+                            await axios.delete(`{{ url('api/menu') }}/${item.id}`);
+
+                            // Limpiar cualquier selección que apunte al elemento eliminado antes de recargar
+                            this.selectedPath = (this.selectedPath || []).filter(sel => sel && sel.id !== item.id);
+                            if (this.itemSelectMenu && this.itemSelectMenu.id === item.id) {
+                                this.itemSelectMenu = null;
+                                this.subMenus = [];
+                            }
+                            if (this.itemSelectSubMenu && this.itemSelectSubMenu.id === item.id) {
+                                this.itemSelectSubMenu = null;
+                                this.grandMenus = [];
+                            }
+
+                            item.estado = 0;
+
+                            await this.getMenus();
+
+                            swal({
+                                title: 'Eliminado',
+                                text: 'El menú fue movido a eliminados.',
+                                icon: 'success',
+                                button: 'OK'
+                            });
+                        } catch (e) {
+                            swal({
+                                title: 'Error',
+                                text: 'No se pudo eliminar el menú.',
                                 icon: 'error',
                                 button: 'Aceptar'
                             });
@@ -1482,7 +1628,7 @@
                         } catch (e) {}
                     },
 
-                    // btnItemMenuDelete duplicado eliminado (ya existe versión completa arriba)
+                    // Mantener búsquedas centralizadas (método principal definido arriba)
                     // Buscar un menú por id en todo el árbol
                     findMenuById(id) {
                         for (const m of this.menus) {
@@ -1765,6 +1911,20 @@
                 background: #0d6efd;
             }
 
+            .mini-card.is-hidden {
+                opacity: 0.55;
+                border-style: dashed;
+            }
+
+            .mini-card.is-hidden:before {
+                background: #adb5bd;
+            }
+
+            .mini-card.is-hidden .fw-medium {
+                text-decoration: line-through;
+                color: #6c757d;
+            }
+
             .mini-card .btn-light {
                 background: transparent;
                 border: none;
@@ -1806,6 +1966,12 @@
             .mini-card .fw-medium {
                 font-weight: 500;
                 color: #495057;
+            }
+
+            .status-label {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
             }
 
             .menu-breadcrumb {

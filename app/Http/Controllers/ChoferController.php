@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Chofer;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+
 class ChoferController extends Controller
 {
     /**
@@ -41,18 +45,36 @@ class ChoferController extends Controller
      */
     public function store(Request $request)
     {
-        $chofer = new Chofer();
-        $chofer->nombre = $request->nombre;
-        $chofer->documento_id = $request->documento_id;
-        $chofer->doc = $request->doc;
-        $chofer->zona = $request->zona;
-        $chofer->modelo = $request->modelo;
-        $chofer->placa = $request->placa;
-        $chofer->color = $request->color;
-        $chofer->capacidad = $request->capacidad;
-        $chofer->estado_compra_chofer_id = $request->estado_compra_chofer_id;
-        $chofer->save();
-        return $chofer;
+        return DB::transaction(function () use ($request) {
+            $documento = trim((string) $request->doc);
+            $correo = $request->filled('correo') ? trim($request->correo) : ($documento ?: null);
+
+            $usuario = new User();
+            $usuario->nombre = $request->nombre;
+            $usuario->apellidos = $request->apellidos;
+            $usuario->correo = $correo;
+            $usuario->usuario = $documento ?: null;
+            if ($request->filled('contrasenia')) {
+                $usuario->password = Hash::make($request->contrasenia);
+            }
+            $usuario->estado = 1;
+            $usuario->save();
+
+            $chofer = new Chofer();
+            $chofer->nombre = $request->nombre;
+            $chofer->documento_id = $request->documento_id;
+            $chofer->doc = $request->doc;
+            $chofer->zona = $request->zona;
+            $chofer->modelo = $request->modelo;
+            $chofer->placa = $request->placa;
+            $chofer->color = $request->color;
+            $chofer->capacidad = $request->capacidad;
+            $chofer->estado_compra_chofer_id = $request->estado_compra_chofer_id;
+            $chofer->user_id = $usuario->id;
+            $chofer->save();
+
+            return $chofer->load('user');
+        });
     }
 
     /**
@@ -85,17 +107,39 @@ class ChoferController extends Controller
      */
     public function update(Request $request, Chofer $chofer)
     {
-        $chofer->nombre = $request->nombre;
-        $chofer->documento_id = $request->documento_id;
-        $chofer->doc = $request->doc;
-        $chofer->zona = $request->zona;
-        $chofer->modelo = $request->modelo;
-        $chofer->placa = $request->placa;
-        $chofer->color = $request->color;
-        $chofer->capacidad = $request->capacidad;
-        $chofer->estado_compra_chofer_id = $request->estado_compra_chofer_id;
-        $chofer->save();
-        return $chofer;
+        return DB::transaction(function () use ($request, $chofer) {
+            $documento = trim((string) $request->doc);
+            $correo = $request->filled('correo') ? trim($request->correo) : ($documento ?: null);
+
+            $usuario = $chofer->user ?? new User();
+            $usuario->nombre = $request->nombre;
+            $usuario->apellidos = $request->apellidos;
+            $usuario->correo = $correo;
+            if ($documento !== '') {
+                $usuario->usuario = $documento;
+            }
+            if ($request->filled('contrasenia')) {
+                $usuario->password = Hash::make($request->contrasenia);
+            }
+            if (! $usuario->exists) {
+                $usuario->estado = 1;
+            }
+            $usuario->save();
+
+            $chofer->nombre = $request->nombre;
+            $chofer->documento_id = $request->documento_id;
+            $chofer->doc = $request->doc;
+            $chofer->zona = $request->zona;
+            $chofer->modelo = $request->modelo;
+            $chofer->placa = $request->placa;
+            $chofer->color = $request->color;
+            $chofer->capacidad = $request->capacidad;
+            $chofer->estado_compra_chofer_id = $request->estado_compra_chofer_id;
+            $chofer->user_id = $usuario->id;
+            $chofer->save();
+
+            return $chofer->load('user');
+        });
     }
 
     /**
