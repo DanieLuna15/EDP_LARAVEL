@@ -411,7 +411,7 @@
                                 swal({
                                     title: 'Rol Actualizado',
                                     text: 'Se actualizó el rol',
-                                    icon: 'warning',
+                                    type: 'warning',
                                     type: 'warning',
                                     button: 'Aceptar'
                                 })
@@ -420,7 +420,7 @@
                                 swal({
                                     title: 'Rol creado',
                                     text: 'Se creó el rol respectivo',
-                                    icon: 'success',
+                                    type: 'success',
                                     type: 'success',
                                     button: 'Aceptar'
                                 })
@@ -431,7 +431,7 @@
                             swal({
                                 title: 'Error',
                                 text: "Registro duplicado",
-                                icon: 'error',
+                                type: 'error',
                                 type: 'error',
                                 button: 'Aceptar'
                             })
@@ -1403,7 +1403,7 @@
                                 swal({
                                     title: 'Límite alcanzado',
                                     text: 'No se pueden agregar más elementos en este nivel',
-                                    icon: 'warning',
+                                    type: 'warning',
                                     button: 'Aceptar'
                                 });
                                 this.btnLoadingMenu = false;
@@ -1463,7 +1463,7 @@
                                     swal({
                                         title: 'Error',
                                         text: 'No se pudo crear el menú',
-                                        icon: 'error',
+                                        type: 'error',
                                         button: 'Aceptar'
                                     });
                                 });
@@ -1482,7 +1482,7 @@
                             const confirmAction = await swal({
                                 title: willShow ? 'Mostrar menú' : 'Ocultar menú',
                                 text: `¿Desea ${actionText} "${item.label}"?`,
-                                icon: 'warning',
+                                type: 'warning',
                                 buttons: {
                                     cancel: {
                                         text: 'Cancelar',
@@ -1515,14 +1515,14 @@
                             swal({
                                 title: 'Hecho',
                                 text: willShow ? 'Menú visible nuevamente' : 'Menú ocultado',
-                                icon: 'success',
+                                type: 'success',
                                 button: 'OK'
                             });
                         } catch (e) {
                             swal({
                                 title: 'Error',
                                 text: 'No se pudo actualizar la visibilidad',
-                                icon: 'error',
+                                type: 'error',
                                 button: 'Aceptar'
                             });
                         }
@@ -1573,14 +1573,14 @@
                             swal({
                                 title: 'Eliminado',
                                 text: 'El menú fue movido a eliminados.',
-                                icon: 'success',
+                                type: 'success',
                                 button: 'OK'
                             });
                         } catch (e) {
                             swal({
                                 title: 'Error',
                                 text: 'No se pudo eliminar el menú.',
-                                icon: 'error',
+                                type: 'error',
                                 button: 'Aceptar'
                             });
                         }
@@ -1774,6 +1774,7 @@
             }
 
             /* .levels::-webkit-scrollbar {
+<<<<<<< HEAD
                                                                                                 height: 6px;
                                                                                             }
 
@@ -1786,6 +1787,20 @@
                                                                                                 background: #888;
                                                                                                 border-radius: 3px;
                                                                                             } */
+=======
+                                                                                        height: 6px;
+                                                                                    }
+
+                                                                                    .levels::-webkit-scrollbar-track {
+                                                                                        background: #f1f1f1;
+                                                                                        border-radius: 3px;
+                                                                                    }
+
+                                                                                    .levels::-webkit-scrollbar-thumb {
+                                                                                        background: #888;
+                                                                                        border-radius: 3px;
+                                                                                    } */
+>>>>>>> e717bd3194ef3540a5f27bcaba4dc05fbb70b849
 
             .level-col {
                 min-width: 0;
