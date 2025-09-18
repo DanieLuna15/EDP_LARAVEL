@@ -28,6 +28,8 @@ class ArqueoVentaController extends Controller
     {
         $arqueoVenta = new ArqueoVenta();
         $arqueoVenta->name = $request->name;
+        $arqueoVenta->banco_id = $request->input('banco_id');
+        $arqueoVenta->comprobante_pago = $request->input('comprobante_pago');
         $arqueoVenta->save();
         return $arqueoVenta;
     }
@@ -54,6 +56,12 @@ class ArqueoVentaController extends Controller
     public function update(Request $request, ArqueoVenta $arqueoVenta)
     {
         $arqueoVenta->name = $request->name;
+        if ($request->has('banco_id')) {
+            $arqueoVenta->banco_id = $request->input('banco_id');
+        }
+        if ($request->has('comprobante_pago')) {
+            $arqueoVenta->comprobante_pago = $request->input('comprobante_pago');
+        }
         $arqueoVenta->save();
         return $arqueoVenta;
     }

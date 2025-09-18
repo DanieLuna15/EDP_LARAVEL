@@ -122,14 +122,17 @@
                                                                         <i class="mdi mdi-pencil"></i>
                                                                     </button>
                                                                     <button class="btn btn-light btn-sm border"
-                                                                        :class="Number(item.estado) === 2 ? 'text-success' : 'text-warning'"
-                                                                        :title="Number(item.estado) === 2 ? 'Mostrar en el menú' : 'Ocultar del menú'"
+                                                                        :class="Number(item.estado) === 2 ? 'text-success' :
+                                                                            'text-warning'"
+                                                                        :title="Number(item.estado) === 2 ?
+                                                                            'Mostrar en el menú' : 'Ocultar del menú'"
                                                                         @click.stop="toggleMenuVisibility(item)">
-                                                                        <i :class="Number(item.estado) === 2 ? 'mdi mdi-eye' : 'mdi mdi-eye-off'"></i>
+                                                                        <i
+                                                                            :class="Number(item.estado) === 2 ? 'mdi mdi-eye' :
+                                                                                'mdi mdi-eye-off'"></i>
                                                                     </button>
                                                                     <button class="btn btn-light btn-sm border text-danger"
-                                                                        title="Eliminar"
-                                                                        @click.stop="deleteMenu(item)">
+                                                                        title="Eliminar" @click.stop="deleteMenu(item)">
                                                                         <i class="mdi mdi-delete"></i>
                                                                     </button>
                                                                 </div>
@@ -212,16 +215,14 @@
                                                 v-model="formMenu.icon" required>
                                                 <option disabled value="">Seleccione un ícono</option>
                                                 <option v-for="item in menuList" :value="item.icon" :data-icon="item.icon">
-                                                    {{ item .icon }}
+                                                    {{ item . icon }}
                                                 </option>
                                             </select>
                                         </div>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox"
-                                                :id="`visibleMenuToggle-${formMenu.id || 'nuevo'}`"
-                                                v-model="formMenu.visible">
-                                            <label class="form-check-label"
-                                                :for="`visibleMenuToggle-${formMenu.id || 'nuevo'}`">
+                                                :id="`visibleMenuToggle-${formMenu.id || 'nuevo'}`" v-model="formMenu.visible">
+                                            <label class="form-check-label" :for="`visibleMenuToggle-${formMenu.id || 'nuevo'}`">
                                                 Mostrar en el menú principal
                                             </label>
                                         </div>
@@ -303,18 +304,13 @@
                 },
                 methods: {
                     async init() {
-                        // Muestra el bloqueo mientras cargan roles y menús (con guardas)
-                        try {
-                            block.block()
-                        } catch (e) {}
+                        block.block()
+
                         try {
                             await Promise.all([this.getRoles(), this.getMenus()])
                             this.loadMenu()
                         } finally {
-                            // Oculta el bloqueo cuando todo terminó (éxito o error)
-                            try {
-                                block.unblock()
-                            } catch (e) {}
+                            block.unblock()
                         }
                     },
 
@@ -326,8 +322,7 @@
                         } catch (e) {
                             // opcional: manejar error
                         } finally {
-                            // block.unblock()
-
+                            block.unblock();
                         }
                     },
                     async getMenus() {
@@ -343,7 +338,7 @@
                             this.rebuildSelection()
                         } catch (e) {
                             // opcional: manejar error
-                        } finally{
+                        } finally {
                             block.unblock();
                         }
                     },
@@ -440,6 +435,44 @@
                                 type: 'error',
                                 button: 'Aceptar'
                             })
+                        }
+                    },
+                    async deleteRole(id) {
+                        const target = this.roles.find(r => r.id === id)
+                        const roleName = target ? target.name : ''
+
+                        const confirmDelete = await swal({
+                            title: 'Eliminar rol',
+                            text: roleName ? `Se eliminará "${roleName}". ¿Desea continuar?` : '¿Desea eliminar este rol?',
+                            icon: 'warning',
+                            buttons: true,
+                            dangerMode: true
+                        })
+
+                        if (!confirmDelete) {
+                            return
+                        }
+
+                        block.block()
+                        try {
+                            await axios.delete(`{{ url('api/rol') }}/${id}`)
+                            this.roles = this.roles.filter(r => r.id !== id)
+                            swal({
+                                title: 'Eliminado',
+                                text: 'El rol fue eliminado correctamente.',
+                                icon: 'success',
+                                button: 'Aceptar'
+                            })
+                        } catch (e) {
+                            const message = e?.response?.data?.message || 'No se pudo eliminar el rol.'
+                            swal({
+                                title: 'Error',
+                                text: message,
+                                icon: 'error',
+                                button: 'Aceptar'
+                            })
+                        } finally {
+                            block.unblock()
                         }
                     },
                     btnItemMenu(item) {
@@ -1730,77 +1763,58 @@
                 border-radius: 8px;
                 padding: 1rem;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
             }
 
             .levels {
-                display: flex;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
                 gap: 1.5rem;
-                overflow-x: auto;
-                padding: 0.5rem;
-                /* scroll-behavior: smooth; */
-                height: 100%;
-                min-height: 500px;
-                /* scrollbar-width: thin; */
+                padding: 0.5rem 0;
             }
 
             /* .levels::-webkit-scrollbar {
-                                                                                height: 6px;
-                                                                            }
+                                                                                                height: 6px;
+                                                                                            }
 
-                                                                            .levels::-webkit-scrollbar-track {
-                                                                                background: #f1f1f1;
-                                                                                border-radius: 3px;
-                                                                            }
+                                                                                            .levels::-webkit-scrollbar-track {
+                                                                                                background: #f1f1f1;
+                                                                                                border-radius: 3px;
+                                                                                            }
 
-                                                                            .levels::-webkit-scrollbar-thumb {
-                                                                                background: #888;
-                                                                                border-radius: 3px;
-                                                                            } */
+                                                                                            .levels::-webkit-scrollbar-thumb {
+                                                                                                background: #888;
+                                                                                                border-radius: 3px;
+                                                                                            } */
 
             .level-col {
-                flex: 0 0 320px;
-                max-width: 100%;
+                min-width: 0;
                 transition: all 0.3s ease;
                 background: #fff;
                 border-radius: 8px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             }
 
-            .levels.cols-1 .level-col {
-                flex: 1 1 0;
-            }
-
-            .levels.cols-2 .level-col {
-                flex: 0 0 calc(50% - .75rem);
-            }
-
-            .levels.cols-3 .level-col {
-                flex: 0 0 calc(33.333% - 1rem);
-            }
-
             .level-list {
                 background: #fff;
                 border-radius: 0 0 8px 8px;
                 padding: 1rem;
-                height: calc(100% - 60px);
-                /* 60px es el alto del nuevo header */
-                overflow-y: auto;
-                /* scrollbar-width: thin; */
+                /* Dejamos que el contenido defina la altura para evitar scroll interno indeseado */
             }
 
             /* .level-list::-webkit-scrollbar {
-                                                                                width: 6px;
-                                                                            }
+                                                                                                width: 6px;
+                                                                                            }
 
-                                                                            .level-list::-webkit-scrollbar-track {
-                                                                                background: #f1f1f1;
-                                                                                border-radius: 3px;
-                                                                            }
+                                                                                            .level-list::-webkit-scrollbar-track {
+                                                                                                background: #f1f1f1;
+                                                                                                border-radius: 3px;
+                                                                                            }
 
-                                                                            .level-list::-webkit-scrollbar-thumb {
-                                                                                background: #888;
-                                                                                border-radius: 3px;
-                                                                            } */
+                                                                                            .level-list::-webkit-scrollbar-thumb {
+                                                                                                background: #888;
+                                                                                                border-radius: 3px;
+                                                                                            } */
 
             /* Estilo para el header de cada columna */
             .level-header {
@@ -2020,10 +2034,12 @@
                 font-size: 1.1rem;
                 vertical-align: middle;
             }
+
             /* Icon-only: centrar y sin margen extra */
             .s2-icon-option {
                 justify-content: center;
             }
+
             .s2-icon-option .mdi {
                 margin-right: 0 !important;
             }
@@ -2032,6 +2048,7 @@
                 margin-right: .35rem;
                 vertical-align: middle;
             }
+
             .select2-container--default .select2-selection--single .s2-icon-option .mdi {
                 margin-right: 0 !important;
             }
@@ -2073,11 +2090,13 @@
                 gap: .25rem .5rem;
                 padding: .25rem;
             }
+
             @media (min-width: 420px) {
                 .select2-results__options[role="listbox"] {
                     grid-template-columns: repeat(2, minmax(0, 1fr));
                 }
             }
+
             @media (min-width: 640px) {
                 .select2-results__options[role="listbox"] {
                     grid-template-columns: repeat(3, minmax(0, 1fr));

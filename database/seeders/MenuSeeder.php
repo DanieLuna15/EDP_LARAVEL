@@ -1734,6 +1734,83 @@ Menu::create([
             'icon'    => 'mdi-finance',
         ]);
 
+        $hiddenRoutes = [
+            ['parent_route' => 'admin/configuracion/sucursal', 'route' => 'admin/configuracion/sucursal/*'],
+            ['parent_route' => 'admin/personal/persona', 'route' => 'admin/personal/persona/*'],
+            ['parent_route' => 'admin/control_acceso/usuario', 'route' => 'admin/control_acceso/usuario/*'],
+            ['parent_route' => 'rrhh/contratos', 'route' => 'rrhh/contratos/*'],
+            ['parent_route' => 'rrhh/planillas', 'route' => 'rrhh/planillas/*'],
+            ['parent_route' => 'rrhh/planillaservicios', 'route' => 'rrhh/planillaservicios/*'],
+            ['parent_route' => 'rrhh/finiquito/anual', 'route' => 'rrhh/finiquito/anual/*'],
+            ['parent_route' => 'rrhh/finiquito/quinquenio', 'route' => 'rrhh/finiquito/quinquenio/*'],
+            ['parent_route' => 'rrhh/finiquito/vacacional', 'route' => 'rrhh/finiquito/vacacional/*'],
+            ['parent_route' => 'rrhh/finiquito/aguinaldo', 'route' => 'rrhh/finiquito/aguinaldo/*'],
+            ['parent_route' => 'rrhh/liquidacion', 'route' => 'rrhh/liquidacion/*'],
+            ['parent_route' => 'rrhh/reportes/planillaservicios', 'route' => 'rrhh/reportes/planillaservicios/*'],
+            ['parent_route' => 'rrhh/proveedors', 'route' => 'rrhh/proveedors/*'],
+            ['parent_route' => '/rrhh/dotacions/inventario', 'route' => 'rrhh/dotacions/inventario/*'],
+            ['parent_route' => '/rrhh/dotacions/inventario/ajustes', 'route' => 'rrhh/dotacions/inventario/ajustes/*'],
+            ['parent_route' => '/rrhh/dotacions/inventario/traspasos', 'route' => 'rrhh/dotacions/inventario/traspasos/*'],
+            ['parent_route' => '/rrhh/dotacions/salidacliente', 'route' => 'rrhh/dotacions/salidacliente/*'],
+            ['parent_route' => '/rrhh/dotacions/salidacontratos', 'route' => 'rrhh/dotacions/salidacontratos/*'],
+            ['parent_route' => 'almacen/proveedors', 'route' => 'almacen/proveedors/*'],
+            ['parent_route' => 'almacen/proveedors_aves', 'route' => 'almacen/proveedors_aves/*'],
+            ['parent_route' => 'almacen/compras', 'route' => 'almacen/compras/*'],
+            ['parent_route' => 'almacen/compras-aves', 'route' => 'almacen/compras-aves/*'],
+            ['parent_route' => 'almacen/consilodacion/lista', 'route' => 'almacen/consilodacion/add'],
+            ['parent_route' => 'almacen/consilodacion/lista-ave', 'route' => 'almacen/consilodacion/add-ave'],
+            ['parent_route' => 'almacen/consilodacion/lista-ave-new', 'route' => 'almacen/consilodacion/add-ave-new'],
+            ['parent_route' => 'almacen/consilodacion/pagar', 'route' => 'almacen/consilodacion/pagar/*'],
+            ['parent_route' => 'almacen/consilodacion/tickets', 'route' => 'almacen/consilodacion/tickets/*'],
+            ['parent_route' => 'almacen/consilodacion/pagar-ave', 'route' => 'almacen/consilodacion/pagar-ave/*'],
+            ['parent_route' => 'almacen/consilodacion/tickets-ave', 'route' => 'almacen/consilodacion/tickets/add-ave'],
+            ['parent_route' => 'almacen/consilodacion/pagar-ave-new', 'route' => 'almacen/consilodacion/pagar-ave-new/*'],
+            ['parent_route' => 'almacen/consilodacion/tickets-ave-new', 'route' => 'almacen/consilodacion/tickets/add-ave-new'],
+            ['parent_route' => 'almacen/productos', 'route' => 'almacen/productos/*'],
+            ['parent_route' => 'almacen/cajas/proveedors', 'route' => 'almacen/cajas/proveedors/*'],
+            ['parent_route' => 'almacen/cajas/', 'route' => 'almacen/cajas', 'label' => 'Cajas Base'],
+            ['parent_route' => 'almacen/cajas/', 'route' => 'almacen/cajas/*'],
+            ['parent_route' => 'almacen/cajas/compras', 'route' => 'almacen/cajas/compras/*'],
+            ['parent_route' => 'almacen/cajas/compras/tickets', 'route' => 'almacen/cajas/compras/tickets/*'],
+            ['parent_route' => 'almacen/cajas/traspaso', 'route' => 'almacen/cajas/traspaso/*'],
+            ['parent_route' => 'almacen/cajas/envio', 'route' => 'almacen/cajas/envio/*'],
+            ['parent_route' => 'almacen/cajas/validacion', 'route' => 'almacen/cajas/validacion/*'],
+            ['parent_route' => 'almacen/cajas/ajuste', 'route' => 'almacen/cajas/ajuste/*'],
+            ['parent_route' => 'validacion/item', 'route' => 'validacion/item/*'],
+            ['parent_route' => 'validacion/lista', 'route' => 'validacion/cerradas', 'label' => 'Validaciones Cerradas'],
+            ['parent_route' => 'validacion/lista', 'route' => 'validacion/lotes', 'label' => 'Validaciones Lotes'],
+            ['parent_route' => 'pp/informes', 'route' => 'pp/informes/*'],
+            ['parent_route' => 'pt/lotes', 'route' => 'pt/detalle/*'],
+            ['parent_route' => 'transformacion/lotes', 'route' => 'transformacion/detalle/*'],
+            ['parent_route' => 'cajas', 'route' => 'cajas/asignacion/*'],
+            ['parent_route' => 'cajas/monedas', 'route' => 'cajas/moneda/*'],
+            ['parent_route' => 'ventas/clientes', 'route' => 'ventas/clientes/*'],
+            ['parent_route' => 'ventas/chofers', 'route' => 'ventas/chofers/*'],
+        ];
+
+        foreach ($hiddenRoutes as $definition) {
+            $parent = Menu::where('route', $definition['parent_route'])->first();
+
+            if (!$parent || Menu::where('route', $definition['route'])->exists()) {
+                continue;
+            }
+
+            $label = $definition['label'] ?? trim($parent->label . ' Operaciones');
+            $icon = $definition['icon'] ?? $parent->icon;
+            $maxOrder = Menu::where('menu_id', $parent->id)->max('order');
+            $order = is_null($maxOrder) ? 1 : $maxOrder + 1;
+
+            Menu::create([
+                'icon'    => $icon,
+                'label'   => $label,
+                'order'   => $order,
+                'level'   => $definition['level'] ?? $parent->level + 1,
+                'route'   => $definition['route'],
+                'menu_id' => $parent->id,
+                'estado'  => 2,
+            ]);
+        }
+
         // Asignar los menús al rol de administrador (rol_id = 1)
         $menus = Menu::all();
         foreach ($menus as $menu) {

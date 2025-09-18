@@ -149,6 +149,8 @@ class DespachoArqueoController extends Controller
             $arqueoVenta->venta_id = $request->venta['id'];
             $arqueoVenta->formapago_id = $request->formapago_id;
             $arqueoVenta->user_id = $arqueoActivo['user_id'];
+            $arqueoVenta->banco_id = $request->input('banco_id', $request->input('venta.banco_id'));
+            $arqueoVenta->comprobante_pago = $request->input('comprobante_pago', $request->input('venta.comprobante_pago'));
 
             $arqueoVenta->pago_con = $request->pago_con;
             if ($request->pago_con > $monto) {
@@ -311,6 +313,8 @@ class DespachoArqueoController extends Controller
             $arqueoVenta->monto = $pagar;
             $arqueoVenta->pago_con = $pagar;
             $arqueoVenta->cambio = 0;
+            $arqueoVenta->banco_id = $request->input('banco_id', data_get($despacho, 'banco_id'));
+            $arqueoVenta->comprobante_pago = $request->input('comprobante_pago', data_get($despacho, 'comprobante_pago'));
             $arqueoVenta->save();
 
             $arqueoVentaIds[] = $arqueoVenta->id;
