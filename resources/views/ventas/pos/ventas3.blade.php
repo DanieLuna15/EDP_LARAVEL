@@ -507,7 +507,6 @@
                                                                 <template v-for="m in pts_model">
                                                                     <option v-if="m.cajas>0" :value="m.id">
                                                                         PT-{{ m . ptm . nro }} * {{ m . item . name }}</option>
-
                                                                 </template>
                                                             </select>
                                                         </div>
@@ -712,7 +711,7 @@
                                                                         <div class="form-group">
                                                                             <label for="">PESO PRUTO</label>
                                                                             <input type="text" class="form-control"
-                                                                                :value="Number(d_pp.peso_bruto).toFixed(2)"
+                                                                                :value="Number(d_pp.peso_bruto).toFixed(3)"
                                                                                 readonly>
                                                                         </div>
                                                                     </div>
@@ -720,7 +719,7 @@
                                                                         <div class="form-group">
                                                                             <label for="">PESO NETO</label>
                                                                             <input type="text" class="form-control"
-                                                                                :value="Number(d_pp.peso_neto).toFixed(2)"
+                                                                                :value="Number(d_pp.peso_neto).toFixed(3)"
                                                                                 readonly>
                                                                         </div>
                                                                     </div>
@@ -901,14 +900,14 @@
                                                                         {{ Number(total_detalles . pollos) }}
                                                                     </td>
                                                                     <td>
-                                                                        {{ Number(total_detalles . peso_bruto) . toFixed(2) }}
+                                                                        {{ Number(total_detalles . peso_bruto) . toFixed(3) }}
                                                                     </td>
                                                                     <td>
-                                                                        {{ Number(total_detalles . tara) . toFixed(2) }}
+                                                                        {{ Number(total_detalles . tara) . toFixed(3) }}
 
                                                                     </td>
                                                                     <td>
-                                                                        {{ Number(total_detalles . peso_neto) . toFixed(2) }}
+                                                                        {{ Number(total_detalles . peso_neto) . toFixed(3) }}
                                                                     </td>
                                                                     <td>
                                                                         {{ Number(total_detalles . peso_unitario_bruto) . toFixed(2) }}
@@ -1293,7 +1292,6 @@
                                                                 </th>
                                                             </tr>
                                                             <tr>
-
                                                                 <th>
                                                                     PT
                                                                 </th>
@@ -1339,8 +1337,7 @@
                                                                         v-model="item.peso_neto_vender"
                                                                         @change="changePesoNetoItem(item)"> </td>
                                                                 <td>{{ Number(item . item . venta).toFixed(2) }}</td>
-                                                                <td>{{ Number(item . item . venta * item . peso_neto_vender) . toFixed(2) }}
-                                                                </td>
+                                                                <td>{{ redondearTotal(Number(item.item.venta * item.peso_neto_vender)) }}</td>
                                                                 <td>
                                                                     <div class="btn-group">
                                                                         <button class="btn btn-danger p-1"
@@ -1711,7 +1708,6 @@
             import Table from "{{ asset('config/dt.js') }}"
             import Block from "{{ asset('config/block.js') }}"
 
-
             const {
                 createApp
             } = Vue
@@ -1898,19 +1894,25 @@
 
                     GastosModel() {
                         return this.cart_gastos_model.map((i) => {
+                            i.valor = this.redondearTotal(i.valor);
                             return i
                         })
+
                     },
                     CartPtsModel() {
                         return this.cart_pts.map((i) => {
                             i.total = i.item.venta * i.peso_neto_vender
+                            i.total = this.redondearTotal(i.total);
                             i.total_final = i.total + i.descuento_total
+                            i.total_final = this.redondearTotal(i.total_final);
                             return i
                         })
                     },
+
+
                     CartTransformacions() {
                         return this.transformacion_cart.map((i) => {
-                            i.total_final = i.total_peso_neto * i.subitem.venta
+                            i.total_final = this.redondearTotal(i.total_peso_neto * i.subitem.venta)
                             return i
                         })
                     },
@@ -2023,7 +2025,7 @@
                     },
                     peso_bruto_total() {
                         return Number(this.venta_items_peso_bruto + this.detalle_vente_lotes_peso_bruto + this
-                            .detalle_venta_pp_peso_bruto).toFixed(2)
+                            .detalle_venta_pp_peso_bruto).toFixed(3)
                     },
                     lista_cintas1() {
 
@@ -2330,7 +2332,7 @@
                             }
                             d.tara = Math.ceil(d.cajas_vender*this.retraccion)
                             d.precio_acuerdo = precio_final;
-                            d.total = Number(d.peso_neto_vender * d.precio_acuerdo);
+                            d.total = this.redondearTotal(Number(d.peso_neto_vender * d.precio_acuerdo));
                             d.item = {
                                 ...(d.item || {}),
                                 name: nombreProducto
@@ -2345,7 +2347,7 @@
                             let cajas = m.total_cajas * this.retraccion;
                             m.total_tara = cajas; // 2kg por caja
                             // m.total_peso_neto = m.total_peso_bruto - m.total_tara;
-                            m.subtotal = m.total_peso_neto * m.subitem.venta;
+                            m.subtotal = this.redondearTotal(m.total_peso_neto * m.subitem.venta);
                             return m;
                         });
                     },
@@ -2369,8 +2371,8 @@
                         ? +(pollos * peso).toFixed(2)
                         : (parseFloat(this.peso_acuerdo) || 0);
 
-                    const t_des = +(kg * cantidad).toFixed(2);
-                    const totalConDescuento = +(total - t_des).toFixed(2);
+                    const t_des = +this.redondearTotal((kg * cantidad).toFixed(2));
+                    const totalConDescuento = +this.redondearTotal((total - t_des).toFixed(2));
 
                     return { kg, cantidad, t_des, total: totalConDescuento };
                     },
@@ -2379,7 +2381,7 @@
                         return this.detalle_vente_lotes.map((d) => {
                             d.valor_precio = d.precio_detalle_lote
                             d.tara = Math.ceil(d.cajas*this.retraccion)
-                            d.total = Number(d.peso_mod_neto * d.valor_precio)
+                            d.total = this.redondearTotal(Number(d.peso_mod_neto * d.valor_precio));
                             return d
                         })
                     },
@@ -2399,8 +2401,8 @@
                         })
                     },
                     totalAll() {
-                        let total_detalle_venta_lotes = this.cart_lotes.reduce((a, b) => a + b.total_final, 0)
-                        let total_venta_pps = this.cart_pps.reduce((a, b) => a + b.total, 0)
+                        let total_detalle_venta_lotes = this.cart_lotes.reduce((a, b) => a + Number(b.total_final), 0)
+                        let total_venta_pps = this.cart_pps.reduce((a, b) => a + Number(b.total), 0)
                         let total_vente_pts = this.cart_pts.reduce((a, b) => a + Number(b.total_final), 0)
                         let total_vente_gastos = this.GastosModel.reduce((a, b) => a + Number(b.valor), 0)
                         let total_acuerdo = this.cart_acuerdo_items.reduce((a, b) => a + Number(b.total), 0)
@@ -2422,6 +2424,10 @@
                     },
                 },
                 methods: {
+                    redondearTotal(valor) {
+                        //return (Math.ceil(valor * 10) / 10).toFixed(2);
+                        return (Math.round(valor * 10) / 10).toFixed(2);
+                    },
                     red(n, p = 3) {
                         const f = Math.pow(10, p);
                         return Math.round((Number(n) + Number.EPSILON) * f) / f;
@@ -2949,8 +2955,9 @@
                         let pt_detalle = { ...d }
                         pt_detalle.pt_id = pt.id
                         pt_detalle.nro = pt.nro
-                        pt_detalle.peso_bruto_x_caja = Number(pt_detalle.peso_bruto / pt_detalle.cajas).toFixed(2)
-                        pt_detalle.peso_neto_x_caja = Number(pt_detalle.peso_neto / pt_detalle.cajas).toFixed(2)
+                        let cajas = pt_detalle.cajas > 0 ? pt_detalle.cajas : 1;
+                        pt_detalle.peso_bruto_x_caja = Number(pt_detalle.peso_bruto / cajas).toFixed(3)
+                        pt_detalle.peso_neto_x_caja = Number(pt_detalle.peso_neto / cajas).toFixed(3)
                         pt_detalle.cajas_vender = 1
                         pt_detalle.peso_bruto_vender = pt_detalle.cajas_vender > 0 ? pt_detalle.peso_bruto_x_caja * pt_detalle.cajas_vender : 0;
                         pt_detalle.peso_neto_vender = pt_detalle.cajas_vender > 0 ? pt_detalle.peso_neto_x_caja * pt_detalle.cajas_vender : 0;
@@ -3123,15 +3130,15 @@
 
                         d.precio_detalle_lote = precio_final;
 
-                        d.peso_actual_bruto = Number(d.equivalente * Number(d.peso_unitario_bruto)).toFixed(2);
-                        d.peso_actual_neto  = Number(Number(d.peso_actual_bruto) - cajas).toFixed(2);
-                        d.peso_mod_bruto    = Number(d.peso_actual_bruto).toFixed(2);
-                        d.peso_mod_neto     = Number(d.peso_actual_neto).toFixed(2);
-                        d.merma_bruta       = Number(d.peso_actual_bruto - d.peso_mod_bruto).toFixed(2);
-                        d.merma_neta        = Number(d.peso_actual_neto - d.peso_mod_neto).toFixed(2);
+                        d.peso_actual_bruto = Number(d.equivalente * Number(d.peso_unitario_bruto)).toFixed(3);
+                        d.peso_actual_neto  = Number(Number(d.peso_actual_bruto) - cajas).toFixed(3);
+                        d.peso_mod_bruto    = Number(d.peso_actual_bruto).toFixed(3);
+                        d.peso_mod_neto     = Number(d.peso_actual_neto).toFixed(3);
+                        d.merma_bruta       = Number(d.peso_actual_bruto - d.peso_mod_bruto).toFixed(3);
+                        d.merma_neta        = Number(d.peso_actual_neto - d.peso_mod_neto).toFixed(3);
 
-                        d.peso_unitario_bruto = Number(d.peso_total / d.equivalente).toFixed(2);
-                        d.peso_unitario_neto = Number((d.peso_total - cajas) / d.equivalente).toFixed(2);
+                        d.peso_unitario_bruto = Number(d.peso_total / d.equivalente).toFixed(3);
+                        d.peso_unitario_neto = Number((d.peso_total - cajas) / d.equivalente).toFixed(3);
 
                     },
 
@@ -3198,24 +3205,24 @@
 
                         d.precio_detalle_lote = precio_final;
 
-                        d.peso_actual_bruto = Number(d.equivalente * Number(d.peso_unitario_bruto)).toFixed(2);
-                        d.peso_actual_neto  = Number(Number(d.peso_actual_bruto) - cajas).toFixed(2);
-                        d.peso_mod_bruto    = Number(d.peso_actual_bruto).toFixed(2);
-                        d.peso_mod_neto     = Number(d.peso_actual_neto).toFixed(2);
-                        d.merma_bruta       = Number(d.peso_actual_bruto - d.peso_mod_bruto).toFixed(2);
-                        d.merma_neta        = Number(d.peso_actual_neto - d.peso_mod_neto).toFixed(2);
+                        d.peso_actual_bruto = Number(d.equivalente * Number(d.peso_unitario_bruto)).toFixed(3);
+                        d.peso_actual_neto  = Number(Number(d.peso_actual_bruto) - cajas).toFixed(3);
+                        d.peso_mod_bruto    = Number(d.peso_actual_bruto).toFixed(3);
+                        d.peso_mod_neto     = Number(d.peso_actual_neto).toFixed(3);
+                        d.merma_bruta       = Number(d.peso_actual_bruto - d.peso_mod_bruto).toFixed(3);
+                        d.merma_neta        = Number(d.peso_actual_neto - d.peso_mod_neto).toFixed(3);
 
-                        d.peso_unitario_bruto = Number(d.peso_total / d.equivalente).toFixed(2);
-                        d.peso_unitario_neto = Number((d.peso_total - cajas) / d.equivalente).toFixed(2);
+                        d.peso_unitario_bruto = Number(d.peso_total / d.equivalente).toFixed(3);
+                        d.peso_unitario_neto = Number((d.peso_total - cajas) / d.equivalente).toFixed(3);
                     },
 
                     changeLoteM(d) {
                         const cajas = Number(d.cajas) * Number(this.retraccion || 0);
-                        d.peso_mod_neto = Number(d.peso_mod_bruto - d.tara).toFixed(2)
-                        d.peso_unitario_bruto = Number(d.peso_mod_bruto / d.equivalente).toFixed(2);
-                        d.peso_unitario_neto = Number((d.peso_mod_bruto - cajas) / d.equivalente).toFixed(2);
-                        d.merma_bruta = Number(d.peso_actual_bruto - d.peso_mod_bruto).toFixed(2)
-                        d.merma_neta = Number(d.peso_actual_neto - d.peso_mod_neto).toFixed(2)
+                        d.peso_mod_neto = Number(d.peso_mod_bruto - d.tara).toFixed(3)
+                        d.peso_unitario_bruto = Number(d.peso_mod_bruto / d.equivalente).toFixed(3);
+                        d.peso_unitario_neto = Number((d.peso_mod_bruto - cajas) / d.equivalente).toFixed(3);
+                        d.merma_bruta = Number(d.peso_actual_bruto - d.peso_mod_bruto).toFixed(3)
+                        d.merma_neta = Number(d.peso_actual_neto - d.peso_mod_neto).toFixed(3)
                     },
 
                     AddDetalle(i, compra, cinta, dias) {
@@ -3322,20 +3329,20 @@
                             ...i,
                             compra: { ...compra },
                             producto_precio: buscar_precio[0],
-                            peso_unitario_bruto: Number(i.peso_total / i.equivalente).toFixed(2),
-                            peso_neto: Number(i.peso_total - i.cajas * this.retraccion).toFixed(2),
-                            peso_unitario_neto: Number((i.peso_total - i.cajas * this.retraccion) / i.equivalente).toFixed(2),
-                            peso_actual_bruto: Number(i.equivalente * (i.peso_total / i.equivalente)).toFixed(2),
-                            peso_actual_neto: Number(i.equivalente * ((i.peso_total - i.cajas * this.retraccion) / i.equivalente)).toFixed(2),
-                            peso_mod_bruto: Number(i.equivalente * (i.peso_total / i.equivalente)).toFixed(2),
-                            peso_mod_neto: Number(i.equivalente * ((i.peso_total - i.cajas * this.retraccion) / i.equivalente)).toFixed(2),
+                            peso_unitario_bruto: Number(i.peso_total / i.equivalente).toFixed(3),
+                            peso_neto: Number(i.peso_total - i.cajas * this.retraccion).toFixed(3),
+                            peso_unitario_neto: Number((i.peso_total - i.cajas * this.retraccion) / i.equivalente).toFixed(3),
+                            peso_actual_bruto: Number(i.equivalente * (i.peso_total / i.equivalente)).toFixed(3),
+                            peso_actual_neto: Number(i.equivalente * ((i.peso_total - i.cajas * this.retraccion) / i.equivalente)).toFixed(3),
+                            peso_mod_bruto: Number(i.equivalente * (i.peso_total / i.equivalente)).toFixed(3),
+                            peso_mod_neto: Number(i.equivalente * ((i.peso_total - i.cajas * this.retraccion) / i.equivalente)).toFixed(3),
                             cinta,
                             dias,
                             precio_detalle_lote: precio_final,
                             valor_precio: precio_final
                         };
-                        item.merma_bruta = Number(item.peso_actual_bruto - item.peso_mod_bruto).toFixed(2);
-                        item.merma_neta = Number(item.peso_actual_neto - item.peso_mod_neto).toFixed(2);
+                        item.merma_bruta = Number(item.peso_actual_bruto - item.peso_mod_bruto).toFixed(3);
+                        item.merma_neta = Number(item.peso_actual_neto - item.peso_mod_neto).toFixed(3);
 
                         this.detalle_vente_lotes.push(item);
                     },
@@ -3359,11 +3366,11 @@
                         this.envio.merma_bruta = Number((this.detalle_lote.peso_unit_pollo * this.detalle_vente_lotes) -
                         {
                             ...this.envio
-                        }.bruto).toFixed(2)
+                        }.bruto).toFixed(3)
                         this.envio.merma_neta = Number((this.detalle_lote.peso_neto_pollo * this.detalle_vente_lotes) -
                         {
                             ...this.envio
-                        }.neto).toFixed(2)
+                        }.neto).toFixed(3)
 
 
                     },
@@ -3371,11 +3378,11 @@
                         this.envio.merma_bruta = Number((this.detalle_lote.peso_unit_pollo * this.detalle_vente_lotes) -
                         {
                             ...this.envio
-                        }.bruto).toFixed(2)
+                        }.bruto).toFixed(3)
                         this.envio.merma_neta = Number((this.detalle_lote.peso_neto_pollo * this.detalle_vente_lotes) -
                         {
                             ...this.envio
-                        }.neto).toFixed(2)
+                        }.neto).toFixed(3)
 
 
                     },

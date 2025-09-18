@@ -208,7 +208,7 @@
                         $peso_bruto_t += $de->peso_bruto;
                         $peso_neto_t += $de->peso_neto;
                         $tara_t += max(0, $de->peso_bruto - $de->peso_neto);
-                        $total += $de->peso_neto * $de->venta;
+                        $total += $de->total;
                     ?>
                                 <tr>
 
@@ -282,7 +282,8 @@
                         $peso_bruto_t += $de->peso_bruto;
                         $peso_neto_t += $de->peso_neto;
                         $tara_t += $de->peso_bruto - $de->peso_neto;
-                        $precio_sin_descuento = $de->peso_neto * $de->precio_acuerdo;
+                        $precio_sin_descuento = round($de->peso_neto * $de->precio_acuerdo, 1);
+                        $precio_sin_descuento = number_format($precio_sin_descuento, 2, '.', ''); 
                         $total += $de->total;
 
                     ?>

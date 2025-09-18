@@ -298,7 +298,7 @@ class VentaController extends Controller
 
     public function venta2(Request $request)
     {
-        // dd($request->all());
+        //dd($request->all());
         //dd($request->venta_items);
         try {
             $venta = DB::transaction(function () use ($request) {
@@ -397,7 +397,7 @@ class VentaController extends Controller
                     $ventaItemsPt->peso_bruto = $d['peso_bruto_vender'];
                     $ventaItemsPt->peso_neto = $d['peso_neto_vender'];
                     $ventaItemsPt->precio = $d['item']['venta'];
-                    $ventaItemsPt->total = $d['item']['venta'] * $d['peso_neto_vender'];
+                    $ventaItemsPt->total = $d['total'];
                     $ventaItemsPt->save();
 
                     $cajas_cantidad += $d['cajas_vender'];
@@ -569,7 +569,7 @@ class VentaController extends Controller
                     $ventaTransformacion->taras = ($d['total_cajas'] > 0) ? $d['total_cajas'] * 2 : 0;
                     $ventaTransformacion->peso_neto = $d['total_peso_neto'];
                     $ventaTransformacion->venta = $d['subitem']['venta'] ?? 0.00;
-                    $ventaTransformacion->total = $d['subitem']['venta'] * $d['total_peso_neto'];
+                    $ventaTransformacion->total = $d['subtotal'];
                     $ventaTransformacion->save();
                     $cajas_cantidad += $d['total_cajas'];
                 }

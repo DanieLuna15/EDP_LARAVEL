@@ -122,14 +122,17 @@
                                                                         <i class="mdi mdi-pencil"></i>
                                                                     </button>
                                                                     <button class="btn btn-light btn-sm border"
-                                                                        :class="Number(item.estado) === 2 ? 'text-success' : 'text-warning'"
-                                                                        :title="Number(item.estado) === 2 ? 'Mostrar en el menú' : 'Ocultar del menú'"
+                                                                        :class="Number(item.estado) === 2 ? 'text-success' :
+                                                                            'text-warning'"
+                                                                        :title="Number(item.estado) === 2 ?
+                                                                            'Mostrar en el menú' : 'Ocultar del menú'"
                                                                         @click.stop="toggleMenuVisibility(item)">
-                                                                        <i :class="Number(item.estado) === 2 ? 'mdi mdi-eye' : 'mdi mdi-eye-off'"></i>
+                                                                        <i
+                                                                            :class="Number(item.estado) === 2 ? 'mdi mdi-eye' :
+                                                                                'mdi mdi-eye-off'"></i>
                                                                     </button>
                                                                     <button class="btn btn-light btn-sm border text-danger"
-                                                                        title="Eliminar"
-                                                                        @click.stop="deleteMenu(item)">
+                                                                        title="Eliminar" @click.stop="deleteMenu(item)">
                                                                         <i class="mdi mdi-delete"></i>
                                                                     </button>
                                                                 </div>
@@ -212,16 +215,14 @@
                                                 v-model="formMenu.icon" required>
                                                 <option disabled value="">Seleccione un ícono</option>
                                                 <option v-for="item in menuList" :value="item.icon" :data-icon="item.icon">
-                                                    {{ item .icon }}
+                                                    {{ item . icon }}
                                                 </option>
                                             </select>
                                         </div>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox"
-                                                :id="`visibleMenuToggle-${formMenu.id || 'nuevo'}`"
-                                                v-model="formMenu.visible">
-                                            <label class="form-check-label"
-                                                :for="`visibleMenuToggle-${formMenu.id || 'nuevo'}`">
+                                                :id="`visibleMenuToggle-${formMenu.id || 'nuevo'}`" v-model="formMenu.visible">
+                                            <label class="form-check-label" :for="`visibleMenuToggle-${formMenu.id || 'nuevo'}`">
                                                 Mostrar en el menú principal
                                             </label>
                                         </div>
@@ -343,7 +344,7 @@
                             this.rebuildSelection()
                         } catch (e) {
                             // opcional: manejar error
-                        } finally{
+                        } finally {
                             block.unblock();
                         }
                     },
@@ -416,7 +417,7 @@
                                 swal({
                                     title: 'Rol Actualizado',
                                     text: 'Se actualizó el rol',
-                                    icon: 'warning',
+                                    type: 'warning',
                                     type: 'warning',
                                     button: 'Aceptar'
                                 })
@@ -425,7 +426,7 @@
                                 swal({
                                     title: 'Rol creado',
                                     text: 'Se creó el rol respectivo',
-                                    icon: 'success',
+                                    type: 'success',
                                     type: 'success',
                                     button: 'Aceptar'
                                 })
@@ -436,7 +437,7 @@
                             swal({
                                 title: 'Error',
                                 text: "Registro duplicado",
-                                icon: 'error',
+                                type: 'error',
                                 type: 'error',
                                 button: 'Aceptar'
                             })
@@ -1370,7 +1371,7 @@
                                 swal({
                                     title: 'Límite alcanzado',
                                     text: 'No se pueden agregar más elementos en este nivel',
-                                    icon: 'warning',
+                                    type: 'warning',
                                     button: 'Aceptar'
                                 });
                                 this.btnLoadingMenu = false;
@@ -1430,7 +1431,7 @@
                                     swal({
                                         title: 'Error',
                                         text: 'No se pudo crear el menú',
-                                        icon: 'error',
+                                        type: 'error',
                                         button: 'Aceptar'
                                     });
                                 });
@@ -1449,7 +1450,7 @@
                             const confirmAction = await swal({
                                 title: willShow ? 'Mostrar menú' : 'Ocultar menú',
                                 text: `¿Desea ${actionText} "${item.label}"?`,
-                                icon: 'warning',
+                                type: 'warning',
                                 buttons: {
                                     cancel: {
                                         text: 'Cancelar',
@@ -1482,14 +1483,14 @@
                             swal({
                                 title: 'Hecho',
                                 text: willShow ? 'Menú visible nuevamente' : 'Menú ocultado',
-                                icon: 'success',
+                                type: 'success',
                                 button: 'OK'
                             });
                         } catch (e) {
                             swal({
                                 title: 'Error',
                                 text: 'No se pudo actualizar la visibilidad',
-                                icon: 'error',
+                                type: 'error',
                                 button: 'Aceptar'
                             });
                         }
@@ -1540,14 +1541,14 @@
                             swal({
                                 title: 'Eliminado',
                                 text: 'El menú fue movido a eliminados.',
-                                icon: 'success',
+                                type: 'success',
                                 button: 'OK'
                             });
                         } catch (e) {
                             swal({
                                 title: 'Error',
                                 text: 'No se pudo eliminar el menú.',
-                                icon: 'error',
+                                type: 'error',
                                 button: 'Aceptar'
                             });
                         }
@@ -1744,18 +1745,18 @@
             }
 
             /* .levels::-webkit-scrollbar {
-                                                                                height: 6px;
-                                                                            }
+                                                                                        height: 6px;
+                                                                                    }
 
-                                                                            .levels::-webkit-scrollbar-track {
-                                                                                background: #f1f1f1;
-                                                                                border-radius: 3px;
-                                                                            }
+                                                                                    .levels::-webkit-scrollbar-track {
+                                                                                        background: #f1f1f1;
+                                                                                        border-radius: 3px;
+                                                                                    }
 
-                                                                            .levels::-webkit-scrollbar-thumb {
-                                                                                background: #888;
-                                                                                border-radius: 3px;
-                                                                            } */
+                                                                                    .levels::-webkit-scrollbar-thumb {
+                                                                                        background: #888;
+                                                                                        border-radius: 3px;
+                                                                                    } */
 
             .level-col {
                 flex: 0 0 320px;
@@ -1789,18 +1790,18 @@
             }
 
             /* .level-list::-webkit-scrollbar {
-                                                                                width: 6px;
-                                                                            }
+                                                                                        width: 6px;
+                                                                                    }
 
-                                                                            .level-list::-webkit-scrollbar-track {
-                                                                                background: #f1f1f1;
-                                                                                border-radius: 3px;
-                                                                            }
+                                                                                    .level-list::-webkit-scrollbar-track {
+                                                                                        background: #f1f1f1;
+                                                                                        border-radius: 3px;
+                                                                                    }
 
-                                                                            .level-list::-webkit-scrollbar-thumb {
-                                                                                background: #888;
-                                                                                border-radius: 3px;
-                                                                            } */
+                                                                                    .level-list::-webkit-scrollbar-thumb {
+                                                                                        background: #888;
+                                                                                        border-radius: 3px;
+                                                                                    } */
 
             /* Estilo para el header de cada columna */
             .level-header {
@@ -2020,10 +2021,12 @@
                 font-size: 1.1rem;
                 vertical-align: middle;
             }
+
             /* Icon-only: centrar y sin margen extra */
             .s2-icon-option {
                 justify-content: center;
             }
+
             .s2-icon-option .mdi {
                 margin-right: 0 !important;
             }
@@ -2032,6 +2035,7 @@
                 margin-right: .35rem;
                 vertical-align: middle;
             }
+
             .select2-container--default .select2-selection--single .s2-icon-option .mdi {
                 margin-right: 0 !important;
             }
@@ -2073,11 +2077,13 @@
                 gap: .25rem .5rem;
                 padding: .25rem;
             }
+
             @media (min-width: 420px) {
                 .select2-results__options[role="listbox"] {
                     grid-template-columns: repeat(2, minmax(0, 1fr));
                 }
             }
+
             @media (min-width: 640px) {
                 .select2-results__options[role="listbox"] {
                     grid-template-columns: repeat(3, minmax(0, 1fr));
