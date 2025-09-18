@@ -10,7 +10,7 @@
                         <rect x="14" y="3" width="7" height="7"></rect>
                         <rect x="14" y="14" width="7" height="7"></rect>
                         <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg> Ventas / Estado de Compra de choferes</p>
+                    </svg> Ventas / Estado de Vehículos de choferes</p>
             </div>
             <button data-toggle="modal" data-target="#exampleModal" @click="add=true,model.name=''" class="btn btn-success">Agregar</button>
         </div>

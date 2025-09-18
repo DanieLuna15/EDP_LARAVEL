@@ -157,7 +157,7 @@
                         try {
                             // Validar selección
                             if (!this.model.user_id) {
-                                swal({ title: 'Atención', text: 'Seleccione un usuario', icon: 'warning', button: 'Aceptar' });
+                                swal({ title: 'Atención', text: 'Seleccione un usuario', type: 'warning', button: 'Aceptar' });
                                 return;
                             }
                             // Normalizar tipos y preparar payload
@@ -177,11 +177,11 @@
                             await this.load();
                             await this.$nextTick(() => { dt.create() });
                             // Feedback y reset
-                            swal({ title: 'Guardado', text: 'Asignación registrada', icon: 'success', button: 'OK' });
+                            swal({ title: 'Guardado', text: 'Asignación registrada', type: 'success', button: 'OK' });
                             this.model.user_id = '';
                             this.$nextTick(() => this.initSelectCliente());
                         } catch (e) {
-                            swal({ title: 'Error', text: 'No se pudo guardar la asignación', icon: 'error', button: 'Aceptar' });
+                            swal({ title: 'Error', text: 'No se pudo guardar la asignación', type: 'error', button: 'Aceptar' });
                             console.error('Save error:', e);
                         }
                     },

@@ -604,7 +604,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-3">
+                                        <div class="col-3" style="display: none">
                                             <div class="form-group ">
                                                 <label>Distribuidor</label>
                                                 <div class="input-group">
@@ -632,7 +632,7 @@
                                         </div>
                                         <div class="col-3">
                                             <div class="form-group ">
-                                                <label>Forma de pago</label>
+                                                <label>Método de pago</label>
                                                 <div class="input-group">
                                                     <select v-model="formapago" class="form-control">
                                                         <option value="" disabled selected>Seleccionar</option>
