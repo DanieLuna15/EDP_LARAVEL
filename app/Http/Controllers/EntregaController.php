@@ -1323,7 +1323,7 @@ class EntregaController extends Controller
 
         $fecha_inicio = Carbon::parse($request->fecha_inicio)->startOfDay()->format('Y-m-d H:i:s');
         $fecha_fin = Carbon::parse($request->fecha_fin)->endOfDay()->format('Y-m-d H:i:s');
-        $query = ArqueoVenta::with(['venta.cliente', 'user', 'formaPago'])
+        $query = ArqueoVenta::with(['venta.cliente', 'user', 'formaPago', 'banco'])
             ->where('estado', 1)
             ->where('pago_con', '>', 0)
             ->whereBetween('created_at', [$fecha_inicio, $fecha_fin]);
@@ -1341,6 +1341,7 @@ class EntregaController extends Controller
             $cliente_nombre = $item->venta->cliente ? $item->venta->cliente->nombre : 'No Disponible';
             $usuario_nombre = $item->user ? $item->user->nombre . ' ' . $item->user->apellidos : 'No Disponible';
             $forma_pago = $item->formaPago ? $item->formaPago->name : 'No Disponible';
+            $banco_nombre = $item->banco ? $item->banco->name : null;
             return [
                 'id' => $item->id,
                 'id_venta' => $item->venta_id,
@@ -1349,7 +1350,9 @@ class EntregaController extends Controller
                 'url_pdf' => url("reportes/cobranzas-oficial-ind/{$item->id}"),
                 'cliente_nombre' => $cliente_nombre,
                 'usuario_nombre' => $usuario_nombre,
-                'forma_pago' => $forma_pago
+                'forma_pago' => $forma_pago,
+                'banco' => $banco_nombre,
+                'comprobante_pago' => $item->comprobante_pago,
             ];
         });
 

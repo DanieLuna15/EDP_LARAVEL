@@ -63,6 +63,7 @@
                                                 <th>Usuario</th>
                                                 <th>Total Pagado</th>
                                                 <th>Forma de Pago</th>
+                                                <th>Banco / Comprobante</th>
                                                 <th>Fecha Emisión</th>
                                                 <th>Accion</th>
                                             </tr>
@@ -76,6 +77,11 @@
                                                     <td>{{ cobro.usuario_nombre }}</td>
                                                     <td>{{ cobro.pago_con }}</td>
                                                     <td>{{ cobro.forma_pago }}</td>
+                                                    <td>
+                                                        <div>{{ cobro.banco || 'Sin banco' }}</div>
+                                                        <small class="text-muted" v-if="cobro.comprobante_pago">{{ cobro.comprobante_pago }}</small>
+                                                        <small class="text-muted" v-else>-</small>
+                                                    </td>
                                                     <td>{{ cobro.created_at }}</td>
                                                     <td>
                                                         <a :href="cobro.url_pdf" target="_blank" class="btn btn-info btn-sm"><i
