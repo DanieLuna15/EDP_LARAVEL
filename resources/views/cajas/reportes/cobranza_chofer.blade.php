@@ -125,7 +125,7 @@
                         try { $sel.select2('destroy'); } catch (e) {}
                         $sel.select2({
                             placeholder: "Seleccione un chofer",
-                            allowClear: true,
+                            allowClear: false,
                             width: '100%'
                         });
                         // Sync select2 -> Vue

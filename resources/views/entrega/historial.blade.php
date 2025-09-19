@@ -55,7 +55,7 @@
                                             <th>Creacion</th>
                                             <th>CLIENTE</th>
                                             <th>USUARIO</th>
-                                            <th>DISTRIBUIDOR/CHOFER</th>
+                                            <th>CHOFER</th>
                                             <th>METODO PAGO</th>
                                             <th>TOTAL</th>
                                             <th>ESTADO PAGO</th>
@@ -75,8 +75,28 @@
                                             </td>
                                             <td>{{ m . cliente . nombre }}</td>
                                             <td>{{ m . user . nombre }} {{ m . user . apellidos }}</td>
-                                            <td>{{ m . distribuidor . nombre }} {{ m . distribuidor . apellidos }} /
-                                                {{ m . chofer . nombre }}
+                                            <td>
+                                                <div class="d-flex align-items-start justify-content-between w-100"
+                                                    style="gap: 0.75rem;">
+                                                    <div class="d-flex flex-column">
+                                                        
+                                                        <span class="text-muted text-uppercase small mt-2">Chofer</span>
+                                                        <span v-if="m.chofer">
+                                                            {{ m . chofer . nombre }}
+                                                        </span>
+                                                        <span v-else class="text-muted">Sin asignar</span>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm align-self-start"
+                                                        @click="abrirModalCambio(m)" :disabled="!puedeCambiarChofer(m)"
+                                                        :class="{ 'disabled': !puedeCambiarChofer(m) }"
+                                                        :title="puedeCambiarChofer(m) ? 'Cambiar chofer' :
+                                                            'Solo disponible si la venta no está despachada y pagada por completo'">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                            <path
+                                                                d="M566.6 214.6L470.6 310.6C461.4 319.8 447.7 322.5 435.7 317.5C423.7 312.5 416 300.9 416 288L416 224L96 224C78.3 224 64 209.7 64 192C64 174.3 78.3 160 96 160L416 160L416 96C416 83.1 423.8 71.4 435.8 66.4C447.8 61.4 461.5 64.2 470.7 73.3L566.7 169.3C579.2 181.8 579.2 202.1 566.7 214.6zM169.3 566.6L73.3 470.6C60.8 458.1 60.8 437.8 73.3 425.3L169.3 329.3C178.5 320.1 192.2 317.4 204.2 322.4C216.2 327.4 224 339.1 224 352L224 416L544 416C561.7 416 576 430.3 576 448C576 465.7 561.7 480 544 480L224 480L224 544C224 556.9 216.2 568.6 204.2 573.6C192.2 578.6 178.5 575.8 169.3 566.7z" />
+                                                        </svg> </button>
+                                                </div>
                                             </td>
                                             <td>
                                                 <span v-if="m.metodo_pago == 1" class="badge badge-success">CONTADO</span>
@@ -150,6 +170,50 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="modalCambioResponsables" tabindex="-1" role="dialog"
+                        aria-labelledby="modalCambioLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalCambioLabel">Cambiar chofer</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-3">Selecciona el responsable que deseas actualizar para la venta
+                                        <strong v-if="venta && venta.id">#{{ venta . id }}</strong>.
+                                    </p>
+                                    <div class="form-group">
+                                        <label for="selectChofer">Chofer</label>
+                                        <select id="selectChofer" class="form-control select-chofer"
+                                            v-model="cambioResponsables.chofer_id">
+                                            <option value="">Sin asignar</option>
+                                            <option v-for="chofer in chofers" :key="`chofer-${chofer.id}`"
+                                                :value="String(chofer.id)">
+                                                {{ chofer . nombre }}
+                                                <template v-if="chofer.apellidos"> {{ chofer . apellidos }}</template>
+                                                <template v-else-if="chofer.doc"> ({{ chofer . doc }})</template>
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-primary" :disabled="loading.cambio"
+                                        @click="guardarCambioResponsables">
+                                        <span v-if="loading.cambio">Guardando...</span>
+                                        <span v-else>Guardar cambios</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -241,7 +305,8 @@
                                                 <label for="">Banco</label>
                                                 <select class="form-control" v-model="despacho.banco_id">
                                                     <option value="" disabled>Selecciona un banco</option>
-                                                    <option v-for="b in bancos" :key="b.id" :value="b.id">{{ b . name }}</option>
+                                                    <option v-for="b in bancos" :key="b.id" :value="b.id">
+                                                        {{ b . name + ' - '+b . cuenta}}</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -287,16 +352,14 @@
                                         <div class="col-12" v-if="Number(despacho.cajas_entregar) > 0">
                                             <div class="form-group">
                                                 <label for="">Observaciones de Cajas</label>
-                                                <textarea class="form-control" rows="2"
-                                                    v-model="despacho.observacion_cajas"
+                                                <textarea class="form-control" rows="2" v-model="despacho.observacion_cajas"
                                                     placeholder="Detalle devoluciones o incidencias de cajas"></textarea>
                                             </div>
                                         </div>
                                         <div class="col-12" v-if="Number(despacho.pago_con) > 0">
                                             <div class="form-group">
                                                 <label for="">Observaciones del Pago</label>
-                                                <textarea class="form-control" rows="2"
-                                                    v-model="despacho.observacion_pago"
+                                                <textarea class="form-control" rows="2" v-model="despacho.observacion_pago"
                                                     placeholder="Notas adicionales sobre el cobro"></textarea>
                                             </div>
                                         </div>
@@ -396,7 +459,8 @@
                                                 <label for="">Banco</label>
                                                 <select class="form-control" v-model="bancoGlobalId">
                                                     <option value="" disabled>Selecciona un banco</option>
-                                                    <option v-for="b in bancos" :key="`global-${b.id}`" :value="b.id">{{ b . name }}</option>
+                                                    <option v-for="b in bancos" :key="`global-${b.id}`" :value="b.id">
+                                                        {{ b . name }}</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -526,6 +590,7 @@
                             save: false,
                             cobrar: false,
                             consultar: false,
+                            cambio: false,
                         },
                         add: true,
                         model: {
@@ -565,6 +630,10 @@
                         clienteActual: null,
                         showCreditoError: false,
                         tipopagos: [],
+                        chofers: [],
+                        cambioResponsables: {
+                            chofer_id: ''
+                        },
                     }
                 },
                 computed: {
@@ -641,14 +710,17 @@
                                 'error');
                         }
                         if (this.mostrarCamposBancariosGlobal && !this.bancoGlobalId) {
-                            return swal.fire('Dato requerido', 'Selecciona un banco para registrar el pago.', 'warning');
+                            return swal.fire('Dato requerido', 'Selecciona un banco para registrar el pago.',
+                                'warning');
                         }
                         if (this.mostrarCamposBancariosGlobal && !this.comprobanteGlobal) {
                             return swal.fire('Dato requerido', 'Ingresa el comprobante de pago.', 'warning');
                         }
                         this.despacho.arqueo = this.arqueo;
-                        this.despacho.banco_id = this.mostrarCamposBancariosGlobal ? Number(this.bancoGlobalId) : null;
-                        this.despacho.comprobante_pago = this.mostrarCamposBancariosGlobal ? this.comprobanteGlobal : '';
+                        this.despacho.banco_id = this.mostrarCamposBancariosGlobal ? Number(this.bancoGlobalId) :
+                            null;
+                        this.despacho.comprobante_pago = this.mostrarCamposBancariosGlobal ? this
+                            .comprobanteGlobal : '';
                         try {
                             let res = await axios.post('/api/pagar-venta', {
                                 ventaIds: this.ventasSeleccionadas,
@@ -656,7 +728,8 @@
                                 despacho: this.despacho,
                                 formapago_id: this.formapagoGlobal,
                                 banco_id: this.mostrarCamposBancariosGlobal ? this.bancoGlobalId : null,
-                                comprobante_pago: this.mostrarCamposBancariosGlobal ? this.comprobanteGlobal : null
+                                comprobante_pago: this.mostrarCamposBancariosGlobal ? this
+                                    .comprobanteGlobal : null
                             });
 
                             if (res.data.success) {
@@ -772,6 +845,136 @@
                             this.despacho.monto = venta.total
                         }
                     },
+                    async abrirModalCambio(venta) {
+                        if (!this.puedeCambiarChofer(venta)) {
+                            return;
+                        }
+                        this.venta = venta;
+                        await this.ensureCambioCatalogos();
+                        this.cambioResponsables = {
+                            chofer_id: venta && venta.chofer ? String(venta.chofer.id) : ''
+                        };
+                        $('#modalCambioResponsables').modal('show');
+                        this.$nextTick(() => {
+                            this.initSelectCambio();
+                        });
+                    },
+                    async ensureCambioCatalogos() {
+                        const choferPromise = this.chofers.length ?
+                            Promise.resolve(null) :
+                            this.GET_DATA("{{ url('api/chofers') }}");
+
+                        try {
+                            const choferesRes = await choferPromise;
+                            if (Array.isArray(choferesRes)) {
+                                this.chofers = choferesRes
+                                    .filter(c => Number(c.estado ?? 1) === 1)
+                                    .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+                            }
+                        } catch (error) {
+                            console.error('Error cargando catálogos de cambio', error);
+                        }
+                    },
+                    initSelectCambio() {
+                        if (typeof $ === 'undefined' || !$.fn || !$.fn.select2) return;
+                        const modal = $('#modalCambioResponsables');
+                        if (!modal.length) return;
+
+                        const vm = this;
+                        const $chofer = modal.find('.select-chofer');
+
+                        try {
+                            $chofer.select2('destroy');
+                        } catch (e) {}
+
+                        $chofer.select2({
+                            placeholder: 'Buscar chofer',
+                            allowClear: false,
+                            width: '100%',
+                            dropdownParent: modal
+                        }).off('change.select2.vue').on('change.select2.vue', function() {
+                            const val = $(this).val();
+                            vm.cambioResponsables.chofer_id = val === null ? '' : val;
+                        });
+                        $chofer.val(vm.cambioResponsables.chofer_id || '').trigger('change.select2');
+                    },
+                    destroySelectCambio() {
+                        if (typeof $ === 'undefined' || !$.fn || !$.fn.select2) return;
+                        const modal = $('#modalCambioResponsables');
+                        if (!modal.length) return;
+                        const $chofer = modal.find('.select-chofer');
+                        try {
+                            $chofer.select2('destroy');
+                        } catch (e) {}
+                    },
+                    resetCambioResponsables() {
+                        this.cambioResponsables = {
+                            chofer_id: ''
+                        };
+                    },
+                    puedeCambiarChofer(venta) {
+                        if (!venta) return false;
+                        const despachado = Number(venta.despachado);
+                        const pendiente = Number(venta.pendiente_total ?? 0);
+                        const pagado = pendiente <= 0;
+                        // Botón solo se deshabilita cuando la venta está despachada y completamente pagada
+                        if (despachado === 2 && pagado) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    async guardarCambioResponsables() {
+                        if (this.loading.cambio) return;
+                        const choferId = this.cambioResponsables.chofer_id;
+                        if (!choferId) {
+                            Swal.fire({
+                                type: 'warning',
+                                title: 'Selecciona un chofer',
+                                text: 'Debes elegir un chofer antes de guardar.'
+                            });
+                            return;
+                        }
+
+                        this.loading.cambio = true;
+                        try {
+                            const payload = {
+                                chofer_id: Number(choferId) || null
+                            };
+                            const url = `{{ url('api/ventas') }}/${this.venta.id}`;
+                            const res = await axios.put(url, payload);
+                            const ventaActualizada = res.data && res.data.venta ? res.data.venta : res.data;
+
+                            if (ventaActualizada) {
+                                const idx = this.ventas.findIndex(v => v.id === ventaActualizada.id);
+                                if (idx !== -1) {
+                                    this.ventas.splice(idx, 1, {
+                                        ...this.ventas[idx],
+                                        ...ventaActualizada
+                                    });
+                                }
+                                this.venta = {
+                                    ...this.venta,
+                                    ...ventaActualizada
+                                };
+                            }
+
+                            $('#modalCambioResponsables').modal('hide');
+                            Swal.fire({
+                                type: 'success',
+                                title: 'Datos actualizados',
+                                text: 'El chofer se actualizó correctamente.'
+                            });
+                        } catch (error) {
+                            console.error('Error actualizando responsables', error);
+                            Swal.fire({
+                                type: 'error',
+                                title: 'Error',
+                                text: 'No se pudo actualizar el chofer. Intenta nuevamente.'
+                            });
+                        } finally {
+                            this.loading.cambio = false;
+                        }
+                    },
                     async Save() {
 
                         if (this.loading.save) return;
@@ -784,7 +987,8 @@
                             observacion_cajas: (this.despacho.observacion_cajas || '').trim(),
                             observacion_pago: (this.despacho.observacion_pago || '').trim(),
                             banco_id: this.mostrarCamposBancarios ? Number(this.despacho.banco_id) : null,
-                            comprobante_pago: this.mostrarCamposBancarios ? (this.despacho.comprobante_pago || '').trim() : null,
+                            comprobante_pago: this.mostrarCamposBancarios ? (this.despacho.comprobante_pago ||
+                                '').trim() : null,
                             entregado: this.despacho.entregado
                         };
                         try {
@@ -1090,9 +1294,26 @@
                             this.bancoGlobalId = '';
                             this.comprobanteGlobal = '';
                         }
+                    },
+                    chofers() {
+                        if (typeof $ === 'undefined') return;
+                        if ($('#modalCambioResponsables').hasClass('show')) {
+                            this.$nextTick(() => this.initSelectCambio());
+                        }
                     }
                 },
                 mounted() {
+                    if (typeof $ !== 'undefined') {
+                        const modal = $('#modalCambioResponsables');
+                        const vm = this;
+                        modal.on('shown.bs.modal', function() {
+                            vm.$nextTick(() => vm.initSelectCambio());
+                        });
+                        modal.on('hidden.bs.modal', function() {
+                            vm.destroySelectCambio();
+                            vm.resetCambioResponsables();
+                        });
+                    }
                     this.$nextTick(async () => {
                         let self = this
                         let user = localStorage.getItem('AppUser')
@@ -1140,6 +1361,7 @@
                 accent-color: #28a745;
                 cursor: pointer;
             }
+
         </style>
     @endslot
 @endcomponent

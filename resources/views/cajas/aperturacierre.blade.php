@@ -108,6 +108,28 @@
                                                 <option v-for="s in formapagos" :value="s.id">{{ s . name }}</option>
                                             </select>
                                         </div>
+                                        <template v-if="mostrarCamposBancariosIngreso">
+                                            <div class="form-group col-md-12">
+                                                <label for="selectBanco">Banco</label>
+                                                <select id="selectBanco" v-model="ingreso.banco_id" class="form-control">
+                                                    <option value="">Sin banco</option>
+                                                    <option v-for="banco in bancos" :key="banco.id" :value="String(banco.id)">
+                                                        {{ banco . name + ' - ' + banco . cuenta }}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-12">
+                                                <label for="inputComprobante">Nro. comprobante</label>
+                                                <input id="inputComprobante" type="text" v-model="ingreso.nro_comprobante"
+                                                    class="form-control" placeholder="Opcional">
+                                            </div>
+                        
+                                            <div class="form-group col-md-12">
+                                                <label for="textareaObs">Observaciones</label>
+                                                <textarea id="textareaObs" class="form-control" rows="2"
+                                                    v-model="ingreso.obs" placeholder="Detalle adicional opcional"></textarea>
+                                            </div>
+                                        </template>
 
                                     </div>
                                 </div>
@@ -267,7 +289,7 @@
                                     <p class="task-hight-priority"><span>Bs. {{ Number(BalanceTotal) . toFixed(2) }}</span></p>
                                     <p>
                                         <button v-if="arqueos.length>0" class="btn btn-warning" data-toggle="modal"
-                                            data-target="#exampleIngrespModal" @click="ingreso.monto=0,ingreso.motivo=''">INGRESO
+                                            data-target="#exampleIngrespModal" @click="openIngresoModal">INGRESO
                                             / EGRESO</button>
                                     </p>
                                     <p>
@@ -348,10 +370,14 @@
                             monto: 0,
                             formapago_id: '',
                             cajamotivo_id: '',
-                            tipo: 1
+                            tipo: 1,
+                            banco_id: '',
+                            nro_comprobante: '',
+                            obs: '',
                         },
                         formapagos: [],
                         motivos: [],
+                        bancos: [],
                         monedas: [],
                         monto_inicial: 0,
                         ingresos: 0,
@@ -398,8 +424,35 @@
                             Number(this.CajaAbierta.monto_total_ventas)
                         );
                     },
+                    mostrarCamposBancariosIngreso() {
+                        return Number(this.ingreso.formapago_id) !== 1 && !!this.ingreso.formapago_id;
+                    },
+                },
+                watch: {
+                    'ingreso.formapago_id'(val) {
+                        if (Number(val) === 1 || !val) {
+                            this.ingreso.banco_id = '';
+                            this.ingreso.nro_comprobante = '';
+                            this.ingreso.obs = '';
+                        }
+                    }
                 },
                 methods: {
+                    resetIngreso() {
+                        this.ingreso = {
+                            monto: 0,
+                            formapago_id: '',
+                            cajamotivo_id: '',
+                            tipo: 1,
+                            banco_id: '',
+                            nro_comprobante: '',
+                            obs: '',
+                        };
+                    },
+                    openIngresoModal() {
+                        this.resetIngreso();
+                        this.ingreso.tipo = 1;
+                    },
                     calcularTotal() {
                         let totalMonedas = 0;
                         this.monedas.forEach(moneda => {
@@ -540,12 +593,38 @@
 
                     async SaveIngreso() {
                         try {
-                            // let res = await axios.post(, this.model)
+                            if (!this.ingreso.formapago_id) {
+                                swal.fire({
+                                    title: 'Dato requerido',
+                                    text: 'Selecciona una forma de pago.',
+                                    type: 'warning',
+                                });
+                                return;
+                            }
 
-                            this.ingreso.arqueo_id = this.CajaAbierta.id
+                            const arqueoId = this.CajaAbierta && this.CajaAbierta.id ? this.CajaAbierta.id : null;
+                            if (!arqueoId) {
+                                swal.fire({
+                                    title: 'Sin caja abierta',
+                                    text: 'No se encontró una caja aperturada para registrar el movimiento.',
+                                    type: 'warning',
+                                });
+                                return;
+                            }
+
+                            const payload = {
+                                arqueo_id: arqueoId,
+                                cajamotivo_id: this.ingreso.cajamotivo_id || null,
+                                formapago_id: this.ingreso.formapago_id,
+                                tipo: this.ingreso.tipo,
+                                monto: Number(this.ingreso.monto || 0),
+                                banco_id: this.ingreso.banco_id ? Number(this.ingreso.banco_id) : null,
+                                nro_comprobante: (this.ingreso.nro_comprobante || '').trim() || null,
+                                obs: (this.ingreso.obs || '').trim() || null,
+                            };
 
                             let url = "{{ url('api/arqueoIngresos') }}";
-                            let res = await axios.post(url, this.ingreso)
+                            let res = await axios.post(url, payload)
 
 
                             const swalWithBootstrapButtons = swal.mixin({
@@ -563,6 +642,7 @@
 
                             })
                             await this.load()
+                            this.resetIngreso();
                         } catch (e) {
 
                         }
@@ -587,7 +667,8 @@
                                         '-' + self.sucursal.id),
                                     self.GET_DATA("{{ url('api/formapagos') }}"),
                                     self.GET_DATA("{{ url('api/cajaMotivos') }}"),
-                                    self.GET_DATA("{{ url('api/cajaMonedas') }}")
+                                    self.GET_DATA("{{ url('api/cajaMonedas') }}"),
+                                    self.GET_DATA("{{ url('api/bancos') }}"),
 
                                 ]).then((v) => {
 
@@ -596,6 +677,7 @@
                                     self.formapagos = v[2];
                                     self.motivos = v[3];
                                     self.monedas = v[4];
+                                    self.bancos = (v[5] || []).filter(b => Number(b.estado ?? 1) === 1);
                                 })
 
                             } catch (e) {

@@ -141,7 +141,7 @@
                         // inicializar select2 en el select del modal
                         $sel.select2({
                             placeholder: "Seleccione un Usuario",
-                            allowClear: true,
+                            allowClear: false,
                             width: '100%',
                             dropdownParent: $('#exampleModal')
                         });

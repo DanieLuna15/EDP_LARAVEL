@@ -124,7 +124,7 @@
                         } catch (e) {}
                         $sel.select2({
                             placeholder: "Seleccione un usuario",
-                            allowClear: true,
+                            allowClear: false,
                             width: '100%'
                         });
                         // Sync select2 -> Vue

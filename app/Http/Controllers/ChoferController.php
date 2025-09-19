@@ -17,7 +17,7 @@ class ChoferController extends Controller
      */
     public function index()
     {
-        return Chofer::with(['Documento','EstadoCompraChofer','ZonaDespacho'])->where('estado',1)->get();
+        return Chofer::with(['Documento','EstadoCompraChofer','ZonaDespacho','user'])->where('estado',1)->get();
     }
     public function turno()
     {

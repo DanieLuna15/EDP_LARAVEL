@@ -717,6 +717,26 @@ class VentaController extends Controller
      */
     public function update(Request $request, Venta $venta)
     {
+        if ($request->has('chofer_id')) {
+            $choferId = $request->input('chofer_id');
+            if ($choferId) {
+                $venta->chofer_id = $choferId;
+                $chofer = Chofer::with('user')->find($choferId);
+                $venta->distribuidor_id = $chofer && $chofer->user ? $chofer->user->id : null;
+            } else {
+                $venta->chofer_id = null;
+                $venta->distribuidor_id = null;
+            }
+            $venta->save();
+
+            $venta->load(['Chofer', 'Distribuidor']);
+
+            return response()->json([
+                'message' => 'Venta actualizada correctamente.',
+                'venta' => $venta,
+            ]);
+        }
+
         $venta->name = $request->name;
         $venta->save();
         return $venta;

@@ -15,7 +15,9 @@ class ArqueoIngresoController extends Controller
      */
     public function index()
     {
-        return ArqueoIngreso::where('estado',1)->get();
+        return ArqueoIngreso::with(['formapago', 'cajamotivo', 'banco'])
+            ->where('estado', 1)
+            ->get();
     }
 
     /**
@@ -34,10 +36,15 @@ class ArqueoIngresoController extends Controller
         $arqueoIngreso->formapago_id = $request->formapago_id;
         $arqueoIngreso->tipo = $request->tipo;
         $arqueoIngreso->monto = $request->monto;
+        $arqueoIngreso->banco_id = $request->filled('banco_id') ? $request->banco_id : null;
+        $arqueoIngreso->nro_comprobante = $request->filled('nro_comprobante')
+            ? trim($request->nro_comprobante)
+            : null;
+        $arqueoIngreso->obs = $request->filled('obs') ? trim($request->obs) : null;
         $arqueoIngreso->fecha = Carbon::now()->format('Y-m-d');
         $arqueoIngreso->nro = $nro+1;
         $arqueoIngreso->save();
-        return $arqueoIngreso;
+        return $arqueoIngreso->load(['formapago', 'cajamotivo', 'banco']);
     }
 
     /**
@@ -61,9 +68,36 @@ class ArqueoIngresoController extends Controller
      */
     public function update(Request $request, ArqueoIngreso $arqueoIngreso)
     {
-        $arqueoIngreso->name = $request->name;
+        $campos = [
+            'cajamotivo_id',
+            'formapago_id',
+            'tipo',
+            'monto',
+            'banco_id',
+            'nro_comprobante',
+            'obs',
+        ];
+
+        foreach ($campos as $campo) {
+            if ($request->has($campo)) {
+                $valor = $request->$campo;
+                if ($campo === 'banco_id') {
+                    $arqueoIngreso->$campo = $request->filled('banco_id') ? $request->banco_id : null;
+                } elseif (in_array($campo, ['nro_comprobante', 'obs'])) {
+                    $arqueoIngreso->$campo = $request->filled($campo) ? trim($valor) : null;
+                } else {
+                    $arqueoIngreso->$campo = $valor;
+                }
+            }
+        }
+
+        if ($request->has('fecha')) {
+            $arqueoIngreso->fecha = $request->fecha;
+        }
+
         $arqueoIngreso->save();
-        return $arqueoIngreso;
+
+        return $arqueoIngreso->load(['formapago', 'cajamotivo', 'banco']);
     }
 
     /**
